@@ -7,6 +7,7 @@ fn main() {
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
     for j in (0..IMAGE_HEIGHT).rev() {
+        // eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
         for i in 0..IMAGE_WIDTH {
             let red = i as f64 / (IMAGE_WIDTH - 1) as f64;
             let green = j as f64 / (IMAGE_HEIGHT - 1) as f64;
