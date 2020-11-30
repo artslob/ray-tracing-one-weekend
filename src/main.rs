@@ -1,4 +1,8 @@
-struct Vec3 {
+use std::ops;
+use std::ops::Add;
+
+#[derive(Debug)]
+pub struct Vec3 {
     x: f64,
     y: f64,
     z: f64,
@@ -15,6 +19,18 @@ impl Vec3 {
 
     fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3 { x, y, z }
+    }
+}
+
+impl ops::Add for Vec3 {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }
     }
 }
 
@@ -42,5 +58,18 @@ fn main() {
             print!("{} {} {} ", red, green, blue);
         }
         println!();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Vec3;
+
+    #[test]
+    fn test_sum_origins() {
+        let sum = Vec3::origin() + Vec3::origin();
+        assert_eq!(sum.x, 0.0);
+        assert_eq!(sum.y, 0.0);
+        assert_eq!(sum.z, 0.0);
     }
 }
