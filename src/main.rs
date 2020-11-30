@@ -1,5 +1,5 @@
+use std::cmp;
 use std::ops;
-use std::ops::Add;
 
 #[derive(Debug)]
 pub struct Vec3 {
@@ -34,6 +34,14 @@ impl ops::Add for Vec3 {
     }
 }
 
+impl cmp::PartialEq for Vec3 {
+    fn eq(&self, other: &Self) -> bool {
+        compare_floats(self.x, other.x)
+            && compare_floats(self.y, other.y)
+            && compare_floats(self.z, other.z)
+    }
+}
+
 fn main() {
     const IMAGE_WIDTH: i32 = 256;
     const IMAGE_HEIGHT: i32 = 256;
@@ -61,9 +69,18 @@ fn main() {
     }
 }
 
+fn compare_floats_eps(left: f64, right: f64, epsilon: f64) -> bool {
+    return (left - right).abs() < epsilon;
+}
+
+fn compare_floats(left: f64, right: f64) -> bool {
+    return compare_floats_eps(left, right, 0.0000001);
+}
+
 #[cfg(test)]
 mod tests {
-    use super::Vec3;
+    use crate::compare_floats;
+    use crate::Vec3;
 
     #[test]
     fn test_sum_origins() {
@@ -86,6 +103,21 @@ mod tests {
         let sum = Vec3::new(100.0, 55.97, -7.7) + Vec3::new(-0.0, -327.12, 7.1);
         assert_eq!(sum.x, 100.0);
         assert_eq!(sum.y, -271.15);
-        assert!((sum.z + 0.6).abs() < 0.0001);
+        assert!(compare_floats(sum.z, -0.6));
+    }
+
+    #[test]
+    fn test_sum_eq() {
+        let sum = Vec3::new(100.0, 55.97, -7.13) + Vec3::new(-0.0, -327.12, -3.135);
+        let result = Vec3::new(100.0, -271.15, -10.265);
+        assert_eq!(sum, result);
+    }
+
+    #[test]
+    fn test_ne() {
+        assert_ne!(
+            Vec3::new(100.0, 55.97, -7.130001),
+            Vec3::new(100.0, 55.97, -7.13)
+        );
     }
 }
