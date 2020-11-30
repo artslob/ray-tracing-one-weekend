@@ -72,4 +72,20 @@ mod tests {
         assert_eq!(sum.y, 0.0);
         assert_eq!(sum.z, 0.0);
     }
+
+    #[test]
+    fn test_sum_different_origin() {
+        let sum = Vec3::new(0.3, 0.2, 1.5) + Vec3::origin();
+        assert_eq!(sum.x, 0.3);
+        assert_eq!(sum.y, 0.2);
+        assert_eq!(sum.z, 1.5);
+    }
+
+    #[test]
+    fn test_sum_different() {
+        let sum = Vec3::new(100.0, 55.97, -7.7) + Vec3::new(-0.0, -327.12, 7.1);
+        assert_eq!(sum.x, 100.0);
+        assert_eq!(sum.y, -271.15);
+        assert!((sum.z + 0.6).abs() < 0.0001);
+    }
 }
