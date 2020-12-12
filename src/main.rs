@@ -54,6 +54,14 @@ impl ops::AddAssign for Vec3 {
     }
 }
 
+impl ops::MulAssign<f64> for Vec3 {
+    fn mul_assign(&mut self, rhs: f64) {
+        self.x *= rhs;
+        self.y *= rhs;
+        self.z *= rhs;
+    }
+}
+
 impl cmp::PartialEq for Vec3 {
     fn eq(&self, other: &Self) -> bool {
         compare_floats(self.x, other.x)
@@ -94,7 +102,7 @@ fn compare_floats_eps(left: f64, right: f64, epsilon: f64) -> bool {
 }
 
 fn compare_floats(left: f64, right: f64) -> bool {
-    return compare_floats_eps(left, right, 0.0000001);
+    return compare_floats_eps(left, right, 0.000_001);
 }
 
 #[cfg(test)]
@@ -160,5 +168,12 @@ mod tests {
         let mut result = Vec3::new(3.2, 4.5, -6.0);
         result += Vec3::new(3.0, -2.5, 1.0);
         assert_eq!(result, Vec3::new(6.2, 2.0, -5.0));
+    }
+
+    #[test]
+    fn test_mul_assign() {
+        let mut result = Vec3::new(3.2, 4.5, -6.0);
+        result *= 3.0;
+        assert_eq!(result, Vec3::new(9.6, 13.5, -18.0));
     }
 }
