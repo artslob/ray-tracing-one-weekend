@@ -38,6 +38,18 @@ impl ops::Add for Vec3 {
     }
 }
 
+impl ops::Sub for Vec3 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
 impl ops::Neg for Vec3 {
     type Output = Self;
 
@@ -151,6 +163,12 @@ mod tests {
         assert_eq!(sum.x, 100.0);
         assert_eq!(sum.y, -271.15);
         assert!(compare_floats(sum.z, -0.6));
+    }
+
+    #[test]
+    fn test_sub() {
+        let result = Vec3::new(100.0, 55.97, -7.7) - Vec3::new(-1.0, -327.12, 7.1);
+        assert_eq!(result, Vec3::new(101.0, 383.09, -14.8));
     }
 
     #[test]
