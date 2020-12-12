@@ -41,6 +41,16 @@ impl Vec3 {
         let length = self.length();
         self / length
     }
+
+    fn write_color(&self) {
+        const ROUNDING: f64 = 255.0;
+
+        let red = (ROUNDING * self.x) as i32;
+        let green = (ROUNDING * self.y) as i32;
+        let blue = (ROUNDING * self.z) as i32;
+
+        print!("{} {} {} ", red, green, blue);
+    }
 }
 
 impl ops::Add for Vec3 {
@@ -172,13 +182,7 @@ fn main() {
             let green = j as f64 / (IMAGE_HEIGHT - 1) as f64;
             let blue: f64 = 0.25;
 
-            const ROUNDING: f64 = 255.0;
-
-            let red = (ROUNDING * red) as i32;
-            let green = (ROUNDING * green) as i32;
-            let blue = (ROUNDING * blue) as i32;
-
-            print!("{} {} {} ", red, green, blue);
+            Vec3::new(red, green, blue).write_color();
         }
         println!();
     }
