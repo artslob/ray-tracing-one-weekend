@@ -62,6 +62,26 @@ impl ops::Mul for Vec3 {
     }
 }
 
+impl ops::Mul<f64> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self {
+        Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
+    }
+}
+
+impl ops::Mul<Vec3> for f64 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        rhs * self
+    }
+}
+
 impl ops::Neg for Vec3 {
     type Output = Self;
 
@@ -230,6 +250,18 @@ mod tests {
         let a1 = Vec3::new(3.2, 4.5, -6.0);
         let a2 = Vec3::new(7.0, 1.5, 3.0);
         assert_eq!(a1 * a2, Vec3::new(22.4, 6.75, -18.0));
+    }
+
+    #[test]
+    fn test_mul_f64() {
+        let v = Vec3::new(3.2, 4.5, -6.0);
+        assert_eq!(v * 3.0, Vec3::new(9.6, 13.5, -18.0));
+    }
+
+    #[test]
+    fn test_f64_mul_vec() {
+        let v = Vec3::new(3.2, 4.5, -6.0);
+        assert_eq!(3.0 * v, Vec3::new(9.6, 13.5, -18.0));
     }
 
     #[test]
