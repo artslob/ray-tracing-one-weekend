@@ -46,6 +46,14 @@ impl ops::Neg for Vec3 {
     }
 }
 
+impl ops::AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
+    }
+}
+
 impl cmp::PartialEq for Vec3 {
     fn eq(&self, other: &Self) -> bool {
         compare_floats(self.x, other.x)
@@ -145,5 +153,12 @@ mod tests {
         let origin = Vec3::new(3.4, 5.5, -7.0);
         let result = -origin;
         assert_eq!(result, Vec3::new(-3.4, -5.5, 7.0));
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let mut result = Vec3::new(3.2, 4.5, -6.0);
+        result += Vec3::new(3.0, -2.5, 1.0);
+        assert_eq!(result, Vec3::new(6.2, 2.0, -5.0));
     }
 }
