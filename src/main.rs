@@ -82,6 +82,13 @@ impl cmp::PartialEq for Vec3 {
     }
 }
 
+
+impl std::fmt::Display for Vec3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} {} {}", self.x, self.y, self.z)
+    }
+}
+
 fn main() {
     const IMAGE_WIDTH: i32 = 256;
     const IMAGE_HEIGHT: i32 = 256;
@@ -203,5 +210,11 @@ mod tests {
         let expected = 31.832628837945805;
         assert!(compare_floats(result, expected), "result is {}", result);
         assert!(compare_floats(vec.x, 3.2), "x is {}", vec.x);
+    }
+
+    #[test]
+    fn test_fmt() {
+        let vec = Vec3::new(3.2, 4.5, -6.0);
+        assert_eq!(format!("{}", vec), "3.2 4.5 -6")
     }
 }
