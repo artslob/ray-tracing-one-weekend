@@ -20,6 +20,10 @@ impl Vec3 {
     fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3 { x, y, z }
     }
+
+    fn length(&self) -> f64 {
+        self.x.exp2() + self.y.exp2() + self.z.exp2()
+    }
 }
 
 impl ops::Add for Vec3 {
@@ -190,5 +194,14 @@ mod tests {
         let mut result = Vec3::new(3.2, 4.5, -6.0);
         result /= 2.0;
         assert_eq!(result, Vec3::new(1.6, 2.25, -3.0));
+    }
+
+    #[test]
+    fn test_length() {
+        let vec = Vec3::new(3.2, 4.5, -6.0);
+        let result = vec.length();
+        let expected = 31.832628837945805;
+        assert!(compare_floats(result, expected), "result is {}", result);
+        assert!(compare_floats(vec.x, 3.2), "x is {}", vec.x);
     }
 }
