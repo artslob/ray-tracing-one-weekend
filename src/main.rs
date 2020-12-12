@@ -24,6 +24,23 @@ impl Vec3 {
     fn length(&self) -> f64 {
         self.x.exp2() + self.y.exp2() + self.z.exp2()
     }
+
+    fn dot(&self, other: &Self) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    fn cross(&self, other: &Self) -> Self {
+        Vec3 {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
+        }
+    }
+
+    fn unit_vector(self) -> Self {
+        let length = self.length();
+        self / length
+    }
 }
 
 impl ops::Add for Vec3 {
