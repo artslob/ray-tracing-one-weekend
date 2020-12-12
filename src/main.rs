@@ -34,6 +34,18 @@ impl ops::Add for Vec3 {
     }
 }
 
+impl ops::Neg for Vec3 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+}
+
 impl cmp::PartialEq for Vec3 {
     fn eq(&self, other: &Self) -> bool {
         compare_floats(self.x, other.x)
@@ -119,5 +131,19 @@ mod tests {
             Vec3::new(100.0, 55.97, -7.130001),
             Vec3::new(100.0, 55.97, -7.13)
         );
+    }
+
+    #[test]
+    fn test_ng_origin() {
+        let origin = Vec3::origin();
+        let result = -origin;
+        assert_eq!(result, Vec3::origin());
+    }
+
+    #[test]
+    fn test_ng_some() {
+        let origin = Vec3::new(3.4, 5.5, -7.0);
+        let result = -origin;
+        assert_eq!(result, Vec3::new(-3.4, -5.5, 7.0));
     }
 }
