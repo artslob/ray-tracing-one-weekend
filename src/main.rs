@@ -50,6 +50,18 @@ impl ops::Sub for Vec3 {
     }
 }
 
+impl ops::Mul for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
+        }
+    }
+}
+
 impl ops::Neg for Vec3 {
     type Output = Self;
 
@@ -93,7 +105,6 @@ impl cmp::PartialEq for Vec3 {
             && compare_floats(self.z, other.z)
     }
 }
-
 
 impl std::fmt::Display for Vec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -212,6 +223,13 @@ mod tests {
         let mut result = Vec3::new(3.2, 4.5, -6.0);
         result *= 3.0;
         assert_eq!(result, Vec3::new(9.6, 13.5, -18.0));
+    }
+
+    #[test]
+    fn test_mul() {
+        let a1 = Vec3::new(3.2, 4.5, -6.0);
+        let a2 = Vec3::new(7.0, 1.5, 3.0);
+        assert_eq!(a1 * a2, Vec3::new(22.4, 6.75, -18.0));
     }
 
     #[test]
