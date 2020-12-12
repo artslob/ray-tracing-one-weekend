@@ -82,6 +82,14 @@ impl ops::Mul<Vec3> for f64 {
     }
 }
 
+impl ops::Div<f64> for Vec3 {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        self * (1.0 / rhs)
+    }
+}
+
 impl ops::Neg for Vec3 {
     type Output = Self;
 
@@ -256,6 +264,12 @@ mod tests {
     fn test_mul_f64() {
         let v = Vec3::new(3.2, 4.5, -6.0);
         assert_eq!(v * 3.0, Vec3::new(9.6, 13.5, -18.0));
+    }
+
+    #[test]
+    fn test_div() {
+        let v = Vec3::new(3.3, 4.5, -6.0);
+        assert_eq!(v / 3.0, Vec3::new(1.1, 1.5, -2.0));
     }
 
     #[test]
