@@ -62,6 +62,14 @@ impl ops::MulAssign<f64> for Vec3 {
     }
 }
 
+impl ops::DivAssign<f64> for Vec3 {
+    fn div_assign(&mut self, rhs: f64) {
+        self.x /= rhs;
+        self.y /= rhs;
+        self.z /= rhs;
+    }
+}
+
 impl cmp::PartialEq for Vec3 {
     fn eq(&self, other: &Self) -> bool {
         compare_floats(self.x, other.x)
@@ -175,5 +183,12 @@ mod tests {
         let mut result = Vec3::new(3.2, 4.5, -6.0);
         result *= 3.0;
         assert_eq!(result, Vec3::new(9.6, 13.5, -18.0));
+    }
+
+    #[test]
+    fn test_div_assign() {
+        let mut result = Vec3::new(3.2, 4.5, -6.0);
+        result /= 2.0;
+        assert_eq!(result, Vec3::new(1.6, 2.25, -3.0));
     }
 }
