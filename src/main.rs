@@ -8,6 +8,14 @@ pub struct Vec3 {
     z: f64,
 }
 
+impl Copy for Vec3 {}
+
+impl Clone for Vec3 {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
 impl Vec3 {
     fn origin() -> Self {
         Vec3 {
@@ -164,6 +172,23 @@ impl cmp::PartialEq for Vec3 {
 impl std::fmt::Display for Vec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{} {} {}", self.x, self.y, self.z)
+    }
+}
+
+type Point3 = Vec3;
+
+struct Ray {
+    pub origin: Point3,
+    pub direction: Vec3,
+}
+
+impl Ray {
+    fn new(origin: Point3, direction: Vec3) -> Self {
+        Self { origin, direction }
+    }
+
+    fn at(&self, t: f64) -> Point3 {
+        self.origin + t * self.direction
     }
 }
 
