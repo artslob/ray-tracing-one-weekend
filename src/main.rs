@@ -30,7 +30,7 @@ impl Vec3 {
     }
 
     fn length(&self) -> f64 {
-        self.x.exp2() + self.y.exp2() + self.z.exp2()
+        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
     }
 
     fn dot(&self, other: &Self) -> f64 {
@@ -192,9 +192,24 @@ impl Ray {
     }
 
     fn ray_color(&self) -> Color {
+        if self.hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5) {
+            return Color::new(1.0, 0.0, 0.0);
+        }
         let unit_direction = self.direction.unit_vector();
         let t = 0.5 * (unit_direction.y + 1.0);
-        (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+        let white = Color::new(1.0, 1.0, 1.0);
+        // lerp: linear blend
+        // blendedValue = (1−t)⋅startValue + t⋅endValue
+        (1.0 - t) * white + t * Color::new(0.5, 0.7, 1.0)
+    }
+
+    fn hit_sphere(&self, center: Point3, radius: f64) -> bool {
+        let oc: Vec3 = Vec3::origin() - center;
+        let a = self.direction.dot(&self.direction);
+        let b = 2.0 * oc.dot(&self.direction);
+        let c = oc.dot(&oc) - radius.powi(2);
+        let discriminant = b.powi(2) - 4.0 * a * c;
+        discriminant > 0.0
     }
 }
 
