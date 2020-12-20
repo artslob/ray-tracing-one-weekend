@@ -45,9 +45,8 @@ impl Vec3 {
         }
     }
 
-    fn unit_vector(self) -> Self {
-        let length = self.length();
-        self / length
+    fn unit_vector(&self) -> Self {
+        *self / self.length()
     }
 
     fn write_color(&self) {
@@ -176,6 +175,7 @@ impl std::fmt::Display for Vec3 {
 }
 
 type Point3 = Vec3;
+type Color = Vec3;
 
 struct Ray {
     pub origin: Point3,
@@ -190,24 +190,49 @@ impl Ray {
     fn at(&self, t: f64) -> Point3 {
         self.origin + t * self.direction
     }
+
+    fn ray_color(&self) -> Color {
+        let unit_direction = self.direction.unit_vector();
+        let t = 0.5 * (unit_direction.y + 1.0);
+        (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+    }
 }
 
 fn main() {
-    const IMAGE_WIDTH: i32 = 256;
-    const IMAGE_HEIGHT: i32 = 256;
+    const ASPECT_RATIO: f64 = 16.0 / 9.0;
+
+    // image
+    const IMAGE_WIDTH: i32 = 400;
+    const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
     const BRIGHTNESS: i32 = 255;
+
+    // camera
+    const VIEWPORT_HEIGHT: f64 = 2.0;
+    const VIEWPORT_WIDTH: f64 = VIEWPORT_HEIGHT * ASPECT_RATIO;
+    const FOCAL_LENGTH: f64 = 1.0;
+
+    let origin = Vec3::origin();
+    let horizontal = Vec3::new(VIEWPORT_WIDTH, 0.0, 0.0);
+    let vertical = Vec3::new(0.0, VIEWPORT_HEIGHT, 0.0);
+    let lower_left_corner =
+        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, FOCAL_LENGTH);
 
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
+    // rendering from left upper corner to right lower corner
     for j in (0..IMAGE_HEIGHT).rev() {
         // eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
         for i in 0..IMAGE_WIDTH {
-            let red = i as f64 / (IMAGE_WIDTH - 1) as f64;
-            let green = j as f64 / (IMAGE_HEIGHT - 1) as f64;
-            let blue: f64 = 0.25;
+            let u = i as f64 / (IMAGE_WIDTH - 1) as f64;
+            let v = j as f64 / (IMAGE_HEIGHT - 1) as f64;
 
-            Vec3::new(red, green, blue).write_color();
+            let ray = Ray::new(
+                origin,
+                lower_left_corner + u * horizontal + v * vertical - origin,
+            );
+
+            ray.ray_color().write_color();
         }
         println!();
     }

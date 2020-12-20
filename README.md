@@ -2,5 +2,5 @@
 
 Usage:
 ```bash
-cargo run > image.ppl
+cargo run > image.ppm
 ```
