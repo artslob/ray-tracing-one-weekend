@@ -30,7 +30,11 @@ impl Vec3 {
     }
 
     fn length(&self) -> f64 {
-        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
+        self.length_squared().sqrt()
+    }
+
+    fn length_squared(&self) -> f64 {
+        self.x.powi(2) + self.y.powi(2) + self.z.powi(2)
     }
 
     fn dot(&self, other: &Self) -> f64 {
@@ -218,14 +222,15 @@ impl Ray {
 
     fn hit_sphere(&self, center: Point3, radius: f64) -> Option<f64> {
         let oc: Vec3 = Vec3::origin() - center;
-        let a = self.direction.dot(&self.direction);
-        let b = 2.0 * oc.dot(&self.direction);
-        let c = oc.dot(&oc) - radius.powi(2);
-        let discriminant = b.powi(2) - 4.0 * a * c;
+        let a = self.direction.length_squared();
+        let half_b = oc.dot(&self.direction);
+        let c = oc.length_squared() - radius.powi(2);
+        let discriminant = half_b.powi(2) - a * c;
+
         if discriminant < 0.0 {
             None
         } else {
-            Some((-b - discriminant.sqrt()) / (2.0 * a))
+            Some((-half_b - discriminant.sqrt()) / a)
         }
     }
 }
