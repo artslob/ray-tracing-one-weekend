@@ -375,7 +375,7 @@ mod tests {
     fn test_length() {
         let vec = Vec3::new(3.2, 4.5, -6.0);
         let result = vec.length();
-        let expected = 31.832628837945805;
+        let expected = 8.154140052758477;
         assert!(compare_floats(result, expected), "result is {}", result);
         assert!(compare_floats(vec.x, 3.2), "x is {}", vec.x);
     }
