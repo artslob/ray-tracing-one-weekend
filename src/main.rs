@@ -6,7 +6,7 @@ mod vec3;
 mod world;
 
 use crate::ray::Ray;
-use crate::vec3::Vec3;
+use crate::vec3::{Point3, Vec3};
 
 fn main() {
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
@@ -15,6 +15,11 @@ fn main() {
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
     const BRIGHTNESS: i32 = 255;
+
+    let the_world = crate::world::World::new(vec![
+        Box::new(sphere::Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
+        Box::new(sphere::Sphere::new(Point3::new(0., -100.5, -1.), 100.)),
+    ]);
 
     // camera
     const VIEWPORT_HEIGHT: f64 = 2.0;
@@ -42,7 +47,7 @@ fn main() {
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
 
-            ray.ray_color().write_color();
+            ray.ray_color(&the_world).write_color();
         }
         println!();
     }
