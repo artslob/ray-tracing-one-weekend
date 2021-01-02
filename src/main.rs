@@ -3,6 +3,7 @@ mod ray;
 mod sphere;
 mod utils;
 mod vec3;
+mod world;
 
 use crate::ray::Ray;
 use crate::vec3::Vec3;
