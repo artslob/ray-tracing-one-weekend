@@ -6,21 +6,21 @@ pub struct World {
 }
 
 impl World {
-    pub fn empty() -> Self {
-        Self { list: vec![] }
-    }
-
     pub fn new(list: Vec<Box<dyn Hittable>>) -> Self {
         Self { list }
     }
 
-    pub fn clear(&mut self) {
-        self.list.clear()
-    }
-
-    pub fn add(&mut self, value: Box<dyn Hittable>) {
-        self.list.push(value)
-    }
+    // pub fn empty() -> Self {
+    //     Self { list: vec![] }
+    // }
+    //
+    // pub fn clear(&mut self) {
+    //     self.list.clear()
+    // }
+    //
+    // pub fn add(&mut self, value: Box<dyn Hittable>) {
+    //     self.list.push(value)
+    // }
 }
 
 impl Hittable for World {

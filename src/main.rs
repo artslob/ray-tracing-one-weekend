@@ -1,12 +1,13 @@
+use crate::vec3::{Color, Point3, Vec3};
+use rand::Rng;
+
+mod camera;
 mod hittable;
 mod ray;
 mod sphere;
 mod utils;
 mod vec3;
 mod world;
-
-use crate::ray::Ray;
-use crate::vec3::{Point3, Vec3};
 
 fn main() {
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
@@ -16,21 +17,16 @@ fn main() {
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
     const BRIGHTNESS: i32 = 255;
 
+    const SAMPLES_PER_PIXEL: i32 = 100;
+
     let the_world = crate::world::World::new(vec![
         Box::new(sphere::Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
         Box::new(sphere::Sphere::new(Point3::new(0., -100.5, -1.), 100.)),
     ]);
 
-    // camera
-    const VIEWPORT_HEIGHT: f64 = 2.0;
-    const VIEWPORT_WIDTH: f64 = VIEWPORT_HEIGHT * ASPECT_RATIO;
-    const FOCAL_LENGTH: f64 = 1.0;
+    let camera = camera::Camera::new(ASPECT_RATIO);
 
-    let origin = Vec3::origin();
-    let horizontal = Vec3::new(VIEWPORT_WIDTH, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, VIEWPORT_HEIGHT, 0.0);
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, FOCAL_LENGTH);
+    let mut rng = rand::thread_rng();
 
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
@@ -39,15 +35,16 @@ fn main() {
     for j in (0..IMAGE_HEIGHT).rev() {
         // eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
         for i in 0..IMAGE_WIDTH {
-            let u = i as f64 / (IMAGE_WIDTH - 1) as f64;
-            let v = j as f64 / (IMAGE_HEIGHT - 1) as f64;
+            let mut color = Color::new(0., 0., 0.);
 
-            let ray = Ray::new(
-                origin,
-                lower_left_corner + u * horizontal + v * vertical - origin,
-            );
+            for _ in 0..SAMPLES_PER_PIXEL {
+                let u = (i as f64 + rng.gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+                let v = (j as f64 + rng.gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
 
-            ray.ray_color(&the_world).write_color();
+                color += camera.get_ray(u, v).ray_color(&the_world);
+            }
+
+            Vec3::write_color(color, SAMPLES_PER_PIXEL);
         }
         println!();
     }
@@ -56,7 +53,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use crate::utils::compare_floats;
-    use crate::Vec3;
+    use crate::vec3::Vec3;
 
     #[test]
     fn test_sum_origins() {

@@ -1,4 +1,4 @@
-use crate::utils::compare_floats;
+use crate::utils;
 use std::cmp;
 use std::ops;
 
@@ -57,14 +57,21 @@ impl Vec3 {
         *self / self.length()
     }
 
-    pub fn write_color(&self) {
-        const ROUNDING: f64 = 255.0;
+    pub fn write_color(color: Color, samples_per_pixel: i32) {
+        let scale = 1. / samples_per_pixel as f64;
 
-        let red = (ROUNDING * self.x) as i32;
-        let green = (ROUNDING * self.y) as i32;
-        let blue = (ROUNDING * self.z) as i32;
+        let red = Self::color_value(color.x, scale);
+        let green = Self::color_value(color.y, scale);
+        let blue = Self::color_value(color.z, scale);
 
         print!("{} {} {} ", red, green, blue);
+    }
+
+    pub fn color_value(value: f64, scale: f64) -> i32 {
+        const ROUNDING: f64 = 256.0;
+
+        // Write the translated [0,255] value of each color component.
+        (ROUNDING * utils::clamp(value * scale, 0., 0.999)) as i32
     }
 }
 
@@ -170,9 +177,9 @@ impl ops::DivAssign<f64> for Vec3 {
 
 impl cmp::PartialEq for Vec3 {
     fn eq(&self, other: &Self) -> bool {
-        compare_floats(self.x, other.x)
-            && compare_floats(self.y, other.y)
-            && compare_floats(self.z, other.z)
+        utils::compare_floats(self.x, other.x)
+            && utils::compare_floats(self.y, other.y)
+            && utils::compare_floats(self.z, other.z)
     }
 }
 
