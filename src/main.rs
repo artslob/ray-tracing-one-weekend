@@ -16,8 +16,8 @@ fn main() {
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
     const BRIGHTNESS: i32 = 255;
-
     const SAMPLES_PER_PIXEL: i32 = 100;
+    const MAX_DEPTH: i32 = 50;
 
     let the_world = crate::world::World::new(vec![
         Box::new(sphere::Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
@@ -41,7 +41,7 @@ fn main() {
                 let u = (i as f64 + rng.gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
                 let v = (j as f64 + rng.gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
 
-                color += camera.get_ray(u, v).ray_color(&the_world);
+                color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
             }
 
             Vec3::write_color(color, SAMPLES_PER_PIXEL);

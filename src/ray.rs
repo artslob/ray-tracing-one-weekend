@@ -16,15 +16,21 @@ impl Ray {
         self.origin + t * self.direction
     }
 
-    pub fn ray_color(&self, world: &World) -> Color {
-        if let Some(record) = world.hit(self, 0., std::f64::INFINITY) {
-            let color = Color {
-                x: 1.,
-                y: 1.,
-                z: 1.,
+    pub fn ray_color(&self, world: &World, depth: i32) -> Color {
+        if depth <= 0 {
+            return Color {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
             };
-            return 0.5 * (record.normal + color);
         }
+
+        if let Some(record) = world.hit(self, 0., std::f64::INFINITY) {
+            let target = record.point + record.normal + Vec3::random_in_unit_sphere();
+            let ray = Self::new(record.point, target - record.point);
+            return 0.5 * Self::ray_color(&ray, world, depth - 1);
+        }
+
         let unit_direction = self.direction.unit_vector();
         let t = 0.5 * (unit_direction.y + 1.0);
         let white = Color::new(1.0, 1.0, 1.0);

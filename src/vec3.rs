@@ -33,6 +33,24 @@ impl Vec3 {
         Vec3 { x, y, z }
     }
 
+    pub fn random(min: f64, max: f64) -> Self {
+        Self {
+            x: utils::random_double_range(min, max),
+            y: utils::random_double_range(min, max),
+            z: utils::random_double_range(min, max),
+        }
+    }
+
+    pub fn random_in_unit_sphere() -> Self {
+        loop {
+            let random_sphere = Self::random(-1., 1.);
+            if random_sphere.length_squared() >= 1. {
+                continue;
+            }
+            return random_sphere;
+        }
+    }
+
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
@@ -67,7 +85,7 @@ impl Vec3 {
         print!("{} {} {} ", red, green, blue);
     }
 
-    pub fn color_value(value: f64, scale: f64) -> i32 {
+    fn color_value(value: f64, scale: f64) -> i32 {
         const ROUNDING: f64 = 256.0;
 
         // Write the translated [0,255] value of each color component.
