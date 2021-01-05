@@ -25,7 +25,7 @@ impl Ray {
             };
         }
 
-        if let Some(record) = world.hit(self, 0., std::f64::INFINITY) {
+        if let Some(record) = world.hit(self, 0.001, std::f64::INFINITY) {
             let target = record.point + record.normal + Vec3::random_in_unit_sphere();
             let ray = Self::new(record.point, target - record.point);
             return 0.5 * Self::ray_color(&ray, world, depth - 1);
