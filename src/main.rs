@@ -3,6 +3,7 @@ use rand::Rng;
 
 mod camera;
 mod hittable;
+mod materials;
 mod ray;
 mod sphere;
 mod utils;

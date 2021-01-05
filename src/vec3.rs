@@ -97,6 +97,12 @@ impl Vec3 {
         // Write the translated [0,255] value of each color component.
         (ROUNDING * utils::clamp(value, 0., 0.999)) as i32
     }
+
+    pub fn near_zero(&self) -> bool {
+        utils::compare_floats(self.x, 0.0)
+            && utils::compare_floats(self.y, 0.0)
+            && utils::compare_floats(self.z, 0.0)
+    }
 }
 
 impl ops::Add for Vec3 {
