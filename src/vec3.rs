@@ -88,8 +88,10 @@ impl Vec3 {
     fn color_value(value: f64, scale: f64) -> i32 {
         const ROUNDING: f64 = 256.0;
 
+        // gamma-correct for gamma=2.0
+        let value = (value * scale).sqrt();
         // Write the translated [0,255] value of each color component.
-        (ROUNDING * utils::clamp(value * scale, 0., 0.999)) as i32
+        (ROUNDING * utils::clamp(value, 0., 0.999)) as i32
     }
 }
 
