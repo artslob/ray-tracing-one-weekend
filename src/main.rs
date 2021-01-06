@@ -25,7 +25,11 @@ fn main() {
         y: 0.8,
         z: 0.0,
     });
-    let material_center = materials::Dielectric::new(1.5);
+    let material_center = materials::Lambertian::new(Color {
+        x: 0.1,
+        y: 0.2,
+        z: 0.5,
+    });
     let material_left = materials::Dielectric::new(1.5);
     let material_right = materials::Metal::new(
         Color {
@@ -33,7 +37,7 @@ fn main() {
             y: 0.6,
             z: 0.2,
         },
-        1.0,
+        0.0,
     );
 
     let the_world = crate::world::World::new(vec![

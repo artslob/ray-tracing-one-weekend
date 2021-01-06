@@ -49,15 +49,11 @@ impl Metal {
             fuzz: fuzz.min(1.0),
         }
     }
-
-    fn reflect(&self, v: Vec3, n: Vec3) -> Vec3 {
-        v - 2.0 * v.dot(&n) * n
-    }
 }
 
 impl Material for Metal {
     fn scatter(&self, ray: &Ray, record: &HitRecord) -> Option<ScatterData> {
-        let reflected = self.reflect(ray.direction.unit_vector(), record.normal);
+        let reflected = reflect(ray.direction.unit_vector(), record.normal);
         let attenuation = self.albedo;
         let scattered = Ray::new(
             record.point,
@@ -102,12 +98,23 @@ impl Material for Dielectric {
         };
 
         let unit_direction = ray.direction.unit_vector();
-        let refracted = Self::refract(unit_direction, record.normal, refraction_ratio);
-        let scattered = Ray::new(record.point, refracted);
+        let cos_theta = (-unit_direction).dot(&record.normal).min(1.0);
+        let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
+        let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let direction = if cannot_refract {
+            reflect(unit_direction, record.normal)
+        } else {
+            Dielectric::refract(unit_direction, record.normal, refraction_ratio)
+        };
+        let scattered = Ray::new(record.point, direction);
 
         Some(ScatterData {
             attenuation,
             scattered,
         })
     }
+}
+
+fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - 2.0 * v.dot(&n) * n
 }
