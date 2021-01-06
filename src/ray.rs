@@ -17,18 +17,23 @@ impl Ray {
     }
 
     pub fn ray_color(&self, world: &World, depth: i32) -> Color {
+        const BLACK: Vec3 = Color {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        };
+
         if depth <= 0 {
-            return Color {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-            };
+            return BLACK;
         }
 
         if let Some(record) = world.hit(self, 0.001, std::f64::INFINITY) {
-            let target = record.point + record.normal + Vec3::random_unit_vector();
-            let ray = Self::new(record.point, target - record.point);
-            return 0.5 * Self::ray_color(&ray, world, depth - 1);
+            if let Some(scatter_data) = record.material.scatter(self, &record) {
+                let attenuation = scatter_data.attenuation;
+                let scattered = scatter_data.scattered;
+                return attenuation * Self::ray_color(&scattered, world, depth - 1);
+            }
+            return BLACK;
         }
 
         let unit_direction = self.direction.unit_vector();

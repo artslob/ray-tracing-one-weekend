@@ -1,15 +1,21 @@
 use crate::hittable::{HitRecord, Hittable};
+use crate::materials::Material;
 use crate::ray::Ray;
 use crate::vec3::Point3;
 
 pub struct Sphere {
     center: Point3,
     radius: f64,
+    material: Box<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new<M: Material + 'static>(center: Point3, radius: f64, material: M) -> Self {
+        Self {
+            center,
+            radius,
+            material: Box::new(material),
+        }
     }
 }
 
@@ -49,6 +55,7 @@ impl Hittable for Sphere {
             },
             t: root,
             front_face,
+            material: &*self.material,
         })
     }
 }

@@ -20,9 +20,48 @@ fn main() {
     const SAMPLES_PER_PIXEL: i32 = 100;
     const MAX_DEPTH: i32 = 50;
 
+    let material_ground = materials::Lambertian::new(Color {
+        x: 0.8,
+        y: 0.8,
+        z: 0.0,
+    });
+    let material_center = materials::Lambertian::new(Color {
+        x: 0.7,
+        y: 0.3,
+        z: 0.3,
+    });
+    let material_left = materials::Metal::new(Color {
+        x: 0.8,
+        y: 0.8,
+        z: 0.8,
+    });
+    let material_right = materials::Metal::new(Color {
+        x: 0.8,
+        y: 0.6,
+        z: 0.2,
+    });
+
     let the_world = crate::world::World::new(vec![
-        Box::new(sphere::Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)),
-        Box::new(sphere::Sphere::new(Point3::new(0., -100.5, -1.), 100.)),
+        Box::new(sphere::Sphere::new(
+            Point3::new(0., -100.5, -1.),
+            100.,
+            material_ground,
+        )),
+        Box::new(sphere::Sphere::new(
+            Point3::new(0.0, 0.0, -1.0),
+            0.5,
+            material_center,
+        )),
+        Box::new(sphere::Sphere::new(
+            Point3::new(-1.0, 0.0, -1.0),
+            0.5,
+            material_left,
+        )),
+        Box::new(sphere::Sphere::new(
+            Point3::new(1.0, 0.0, -1.0),
+            0.5,
+            material_right,
+        )),
     ]);
 
     let camera = camera::Camera::new(ASPECT_RATIO);
