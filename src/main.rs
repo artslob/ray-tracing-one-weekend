@@ -30,16 +30,22 @@ fn main() {
         y: 0.3,
         z: 0.3,
     });
-    let material_left = materials::Metal::new(Color {
-        x: 0.8,
-        y: 0.8,
-        z: 0.8,
-    });
-    let material_right = materials::Metal::new(Color {
-        x: 0.8,
-        y: 0.6,
-        z: 0.2,
-    });
+    let material_left = materials::Metal::new(
+        Color {
+            x: 0.8,
+            y: 0.8,
+            z: 0.8,
+        },
+        0.3,
+    );
+    let material_right = materials::Metal::new(
+        Color {
+            x: 0.8,
+            y: 0.6,
+            z: 0.2,
+        },
+        1.0,
+    );
 
     let the_world = crate::world::World::new(vec![
         Box::new(sphere::Sphere::new(
