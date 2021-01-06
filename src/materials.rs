@@ -1,5 +1,6 @@
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
+use crate::utils;
 use crate::vec3::{Color, Vec3};
 
 pub trait Material {
@@ -101,7 +102,9 @@ impl Material for Dielectric {
         let cos_theta = (-unit_direction).dot(&record.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        let direction = if cannot_refract {
+        let reflect_value = reflectance(cos_theta, refraction_ratio);
+        let has_reflectance = reflect_value > utils::random_double();
+        let direction = if cannot_refract || has_reflectance {
             reflect(unit_direction, record.normal)
         } else {
             Dielectric::refract(unit_direction, record.normal, refraction_ratio)
@@ -117,4 +120,11 @@ impl Material for Dielectric {
 
 fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - 2.0 * v.dot(&n) * n
+}
+
+fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
+    // use Schlick's approximation for reflectance
+    let r0 = (1. - ref_idx) / (1. + ref_idx);
+    let r0 = r0.powi(2);
+    r0 + (1. - r0) * (1. - cosine).powi(5)
 }
