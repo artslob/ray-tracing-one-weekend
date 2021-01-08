@@ -53,7 +53,12 @@ fn main() {
         )),
         Box::new(sphere::Sphere::new(
             Point3::new(-1.0, 0.0, -1.0),
-            -0.5,
+            0.5,
+            material_left.clone(),
+        )),
+        Box::new(sphere::Sphere::new(
+            Point3::new(-1.0, 0.0, -1.0),
+            -0.45,
             material_left,
         )),
         Box::new(sphere::Sphere::new(
@@ -63,29 +68,22 @@ fn main() {
         )),
     ]);
 
-    let camera = camera::Camera::new(90., ASPECT_RATIO);
-
-    let radians = (std::f64::consts::PI / 4.).cos();
-    let the_world = crate::world::World::new(vec![
-        Box::new(sphere::Sphere::new(
-            Point3::new(-radians, 0., -1.),
-            radians,
-            materials::Lambertian::new(Color {
-                x: 0.0,
-                y: 0.0,
-                z: 1.0,
-            }),
-        )),
-        Box::new(sphere::Sphere::new(
-            Point3::new(radians, 0.0, -1.0),
-            radians,
-            materials::Lambertian::new(Color {
-                x: 1.0,
-                y: 0.0,
-                z: 0.0,
-            }),
-        )),
-    ]);
+    let lookfrom = Point3 {
+        x: -2.0,
+        y: 2.0,
+        z: 1.0,
+    };
+    let lookat = Point3 {
+        x: 0.0,
+        y: 0.0,
+        z: -1.0,
+    };
+    let vup = Vec3 {
+        x: 0.0,
+        y: 1.0,
+        z: 0.0,
+    };
+    let camera = camera::Camera::new(lookfrom, lookat, vup, 20., ASPECT_RATIO);
 
     let mut rng = rand::thread_rng();
 

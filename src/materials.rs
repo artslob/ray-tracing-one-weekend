@@ -71,6 +71,7 @@ impl Material for Metal {
     }
 }
 
+#[derive(Clone)]
 pub struct Dielectric {
     refraction_index: f64,
 }
