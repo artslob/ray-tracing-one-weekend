@@ -63,7 +63,29 @@ fn main() {
         )),
     ]);
 
-    let camera = camera::Camera::new(ASPECT_RATIO);
+    let camera = camera::Camera::new(90., ASPECT_RATIO);
+
+    let radians = (std::f64::consts::PI / 4.).cos();
+    let the_world = crate::world::World::new(vec![
+        Box::new(sphere::Sphere::new(
+            Point3::new(-radians, 0., -1.),
+            radians,
+            materials::Lambertian::new(Color {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            }),
+        )),
+        Box::new(sphere::Sphere::new(
+            Point3::new(radians, 0.0, -1.0),
+            radians,
+            materials::Lambertian::new(Color {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            }),
+        )),
+    ]);
 
     let mut rng = rand::thread_rng();
 

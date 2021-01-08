@@ -27,3 +27,7 @@ pub fn random_double_range(min: f64, max: f64) -> f64 {
     // returns a random real in [min,max)
     min + (max - min) * random_double()
 }
+
+pub fn degrees_to_radians(degrees: f64) -> f64 {
+    degrees * std::f64::consts::PI / 180.
+}
