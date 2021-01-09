@@ -1,3 +1,4 @@
+use crate::sphere::Sphere;
 use crate::vec3::{Color, Point3, Vec3};
 use rand::Rng;
 
@@ -11,80 +12,34 @@ mod vec3;
 mod world;
 
 fn main() {
-    const ASPECT_RATIO: f64 = 16.0 / 9.0;
+    const ASPECT_RATIO: f64 = 3.0 / 2.0;
 
     // image
-    const IMAGE_WIDTH: i32 = 400;
+    const IMAGE_WIDTH: i32 = 1200;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
     const BRIGHTNESS: i32 = 255;
-    const SAMPLES_PER_PIXEL: i32 = 100;
+    const SAMPLES_PER_PIXEL: i32 = 500;
     const MAX_DEPTH: i32 = 50;
 
-    let material_ground = materials::Lambertian::new(Color {
-        x: 0.8,
-        y: 0.8,
-        z: 0.0,
-    });
-    let material_center = materials::Lambertian::new(Color {
-        x: 0.1,
-        y: 0.2,
-        z: 0.5,
-    });
-    let material_left = materials::Dielectric::new(1.5);
-    let material_right = materials::Metal::new(
-        Color {
-            x: 0.8,
-            y: 0.6,
-            z: 0.2,
-        },
-        0.0,
-    );
-
-    let the_world = crate::world::World::new(vec![
-        Box::new(sphere::Sphere::new(
-            Point3::new(0., -100.5, -1.),
-            100.,
-            material_ground,
-        )),
-        Box::new(sphere::Sphere::new(
-            Point3::new(0.0, 0.0, -1.0),
-            0.5,
-            material_center,
-        )),
-        Box::new(sphere::Sphere::new(
-            Point3::new(-1.0, 0.0, -1.0),
-            0.5,
-            material_left.clone(),
-        )),
-        Box::new(sphere::Sphere::new(
-            Point3::new(-1.0, 0.0, -1.0),
-            -0.45,
-            material_left,
-        )),
-        Box::new(sphere::Sphere::new(
-            Point3::new(1.0, 0.0, -1.0),
-            0.5,
-            material_right,
-        )),
-    ]);
+    let the_world = make_world();
 
     let lookfrom = Point3 {
-        x: 3.0,
-        y: 3.0,
-        z: 2.0,
+        x: 13.0,
+        y: 2.0,
+        z: 3.0,
     };
     let lookat = Point3 {
         x: 0.0,
         y: 0.0,
-        z: -1.0,
+        z: 0.0,
     };
     let vup = Vec3 {
         x: 0.0,
         y: 1.0,
         z: 0.0,
     };
-    let dist_to_focus = (lookat - lookfrom).length();
-    let aperture = 2.0;
+    let dist_to_focus = 10.;
+    let aperture = 0.1;
     let camera = camera::Camera::new(
         lookfrom,
         lookat,
@@ -117,6 +72,102 @@ fn main() {
         }
         println!();
     }
+}
+
+fn make_world() -> world::World {
+    let mut the_world = world::World::new(vec![]);
+
+    let material_ground = materials::Lambertian::new(Color {
+        x: 0.5,
+        y: 0.5,
+        z: 0.5,
+    });
+    the_world.add(Box::new(Sphere::new(
+        Point3 {
+            x: 0.0,
+            y: -1000.,
+            z: 0.0,
+        },
+        1000.,
+        Box::new(material_ground),
+    )));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = utils::random_double();
+            let center = Point3 {
+                x: a as f64 + 0.9 * utils::random_double(),
+                y: 0.2,
+                z: b as f64 + 0.9 * utils::random_double(),
+            };
+            let another_point = Point3 {
+                x: 4.,
+                y: 0.2,
+                z: 0.,
+            };
+
+            if (center - another_point).length() <= 0.9 {
+                continue;
+            }
+
+            let sphere_material: Box<dyn materials::Material> = if choose_mat < 0.8 {
+                // diffuse
+                let albedo = Color::random() * Color::random();
+                Box::new(materials::Lambertian::new(albedo))
+            } else if choose_mat < 0.95 {
+                // metal
+                let albedo = Color::random_range(0.5, 1.);
+                let fuzz = utils::random_double_range(0., 0.5);
+                Box::new(materials::Metal::new(albedo, fuzz))
+            } else {
+                // glass
+                Box::new(materials::Dielectric::new(1.5))
+            };
+
+            the_world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+        }
+    }
+
+    the_world.add(Box::new(Sphere::new(
+        Point3 {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        },
+        1.,
+        Box::new(materials::Dielectric::new(1.5)),
+    )));
+    the_world.add(Box::new(Sphere::new(
+        Point3 {
+            x: -4.0,
+            y: 1.0,
+            z: 0.0,
+        },
+        1.,
+        Box::new(materials::Lambertian::new(Color {
+            x: 0.4,
+            y: 0.2,
+            z: 0.1,
+        })),
+    )));
+    the_world.add(Box::new(Sphere::new(
+        Point3 {
+            x: 4.0,
+            y: 1.0,
+            z: 0.0,
+        },
+        1.,
+        Box::new(materials::Metal::new(
+            Color {
+                x: 0.7,
+                y: 0.6,
+                z: 0.5,
+            },
+            0.1,
+        )),
+    )));
+
+    the_world
 }
 
 #[cfg(test)]

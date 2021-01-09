@@ -33,7 +33,15 @@ impl Vec3 {
         Vec3 { x, y, z }
     }
 
-    pub fn random(min: f64, max: f64) -> Self {
+    pub fn random() -> Self {
+        Self {
+            x: utils::random_double(),
+            y: utils::random_double(),
+            z: utils::random_double(),
+        }
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
         Self {
             x: utils::random_double_range(min, max),
             y: utils::random_double_range(min, max),
@@ -43,7 +51,7 @@ impl Vec3 {
 
     pub fn random_in_unit_sphere() -> Self {
         loop {
-            let random_sphere = Self::random(-1., 1.);
+            let random_sphere = Self::random_range(-1., 1.);
             if random_sphere.length_squared() >= 1. {
                 continue;
             }
