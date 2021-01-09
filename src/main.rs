@@ -69,9 +69,9 @@ fn main() {
     ]);
 
     let lookfrom = Point3 {
-        x: -2.0,
-        y: 2.0,
-        z: 1.0,
+        x: 3.0,
+        y: 3.0,
+        z: 2.0,
     };
     let lookat = Point3 {
         x: 0.0,
@@ -83,7 +83,17 @@ fn main() {
         y: 1.0,
         z: 0.0,
     };
-    let camera = camera::Camera::new(lookfrom, lookat, vup, 20., ASPECT_RATIO);
+    let dist_to_focus = (lookat - lookfrom).length();
+    let aperture = 2.0;
+    let camera = camera::Camera::new(
+        lookfrom,
+        lookat,
+        vup,
+        20.,
+        ASPECT_RATIO,
+        aperture,
+        dist_to_focus,
+    );
 
     let mut rng = rand::thread_rng();
 

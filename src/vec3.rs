@@ -55,6 +55,19 @@ impl Vec3 {
         Self::random_in_unit_sphere().unit_vector()
     }
 
+    pub fn random_in_unit_disk() -> Self {
+        loop {
+            let p = Self {
+                x: utils::random_double_range(-1., 1.),
+                y: utils::random_double_range(-1., 1.),
+                z: 0.0,
+            };
+            if p.length_squared() < 1. {
+                return p;
+            }
+        }
+    }
+
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
