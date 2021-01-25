@@ -1,16 +1,18 @@
 use crate::hittable::{HitRecord, Hittable};
 use crate::ray::Ray;
 
+type ThreadHittable = dyn Hittable + Sync + Send;
+
 pub struct World {
-    list: Vec<Box<dyn Hittable>>,
+    list: Vec<Box<ThreadHittable>>,
 }
 
 impl World {
-    pub fn new(list: Vec<Box<dyn Hittable>>) -> Self {
+    pub fn new(list: Vec<Box<ThreadHittable>>) -> Self {
         Self { list }
     }
 
-    pub fn add(&mut self, value: Box<dyn Hittable>) {
+    pub fn add(&mut self, value: Box<ThreadHittable>) {
         self.list.push(value)
     }
 }

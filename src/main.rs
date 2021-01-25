@@ -1,6 +1,8 @@
 use crate::sphere::Sphere;
 use crate::vec3::{Color, Point3, Vec3};
 use rand::Rng;
+use std::sync::Arc;
+use std::thread;
 
 mod camera;
 mod hittable;
@@ -21,7 +23,7 @@ fn main() {
     const SAMPLES_PER_PIXEL: i32 = 500;
     const MAX_DEPTH: i32 = 50;
 
-    let the_world = make_world();
+    let the_world = Arc::new(make_world());
 
     let lookfrom = Point3 {
         x: 13.0,
@@ -40,7 +42,7 @@ fn main() {
     };
     let dist_to_focus = 10.;
     let aperture = 0.1;
-    let camera = camera::Camera::new(
+    let camera = Arc::new(camera::Camera::new(
         lookfrom,
         lookat,
         vup,
@@ -48,17 +50,44 @@ fn main() {
         ASPECT_RATIO,
         aperture,
         dist_to_focus,
-    );
+    ));
 
     let mut rng = rand::thread_rng();
 
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
+    let thread_world = Arc::clone(&the_world);
+    let thread_camera = Arc::clone(&camera);
+
+    let handle = thread::spawn(move || {
+        let i = 0;
+        let j = 0;
+
+        let mut color = Color::new(0., 0., 0.);
+
+        for _ in 0..SAMPLES_PER_PIXEL {
+            // let u = (i as f64 + rng.gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+            // let v = (j as f64 + rng.gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
+            let u = (i as f64 + 0.5) / (IMAGE_WIDTH - 1) as f64;
+            let v = (j as f64 + 0.5) / (IMAGE_HEIGHT - 1) as f64;
+
+            color += thread_camera
+                .get_ray(u, v)
+                .ray_color(&thread_world, MAX_DEPTH);
+        }
+
+        Vec3::write_color(color, SAMPLES_PER_PIXEL);
+        println!("hello from thread");
+    });
+
+    handle.join().unwrap();
+
     // rendering from left upper corner to right lower corner
     for j in (0..IMAGE_HEIGHT).rev() {
-        // eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
+        eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
         for i in 0..IMAGE_WIDTH {
+            let start = std::time::Instant::now();
             let mut color = Color::new(0., 0., 0.);
 
             for _ in 0..SAMPLES_PER_PIXEL {
@@ -69,6 +98,13 @@ fn main() {
             }
 
             Vec3::write_color(color, SAMPLES_PER_PIXEL);
+            let elapsed = start.elapsed();
+            eprintln!(
+                "time elapsed {:?} {:?} {:?}",
+                elapsed,
+                elapsed.as_nanos(),
+                elapsed.as_millis()
+            );
         }
         println!();
     }
@@ -110,7 +146,7 @@ fn make_world() -> world::World {
                 continue;
             }
 
-            let sphere_material: Box<dyn materials::Material> = if choose_mat < 0.8 {
+            let sphere_material: Box<dyn materials::Material + Send + Sync> = if choose_mat < 0.8 {
                 // diffuse
                 let albedo = Color::random() * Color::random();
                 Box::new(materials::Lambertian::new(albedo))

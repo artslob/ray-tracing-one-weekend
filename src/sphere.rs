@@ -3,14 +3,16 @@ use crate::materials::Material;
 use crate::ray::Ray;
 use crate::vec3::Point3;
 
+type ThreadMaterial = dyn Material + Sync + Send;
+
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    material: Box<dyn Material>,
+    material: Box<ThreadMaterial>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: Box<dyn Material>) -> Self {
+    pub fn new(center: Point3, radius: f64, material: Box<ThreadMaterial>) -> Self {
         Self {
             center,
             radius,
