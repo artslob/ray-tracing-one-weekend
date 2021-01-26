@@ -57,31 +57,38 @@ fn main() {
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
-    let thread_world = Arc::clone(&the_world);
-    let thread_camera = Arc::clone(&camera);
+    let mut threads = vec![];
 
-    let handle = thread::spawn(move || {
-        let i = 0;
-        let j = 0;
+    for _ in 0..10 {
+        let thread_world = Arc::clone(&the_world);
+        let thread_camera = Arc::clone(&camera);
 
-        let mut color = Color::new(0., 0., 0.);
+        let handle = thread::spawn(move || {
+            let i = 0;
+            let j = 0;
 
-        for _ in 0..SAMPLES_PER_PIXEL {
-            // let u = (i as f64 + rng.gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-            // let v = (j as f64 + rng.gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
-            let u = (i as f64 + 0.5) / (IMAGE_WIDTH - 1) as f64;
-            let v = (j as f64 + 0.5) / (IMAGE_HEIGHT - 1) as f64;
+            let mut color = Color::new(0., 0., 0.);
 
-            color += thread_camera
-                .get_ray(u, v)
-                .ray_color(&thread_world, MAX_DEPTH);
-        }
+            for _ in 0..SAMPLES_PER_PIXEL {
+                let u = (i as f64 + rand::thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+                let v = (j as f64 + rand::thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
 
-        Vec3::write_color(color, SAMPLES_PER_PIXEL);
-        println!("hello from thread");
-    });
+                color += thread_camera
+                    .get_ray(u, v)
+                    .ray_color(&thread_world, MAX_DEPTH);
+            }
 
-    handle.join().unwrap();
+            Vec3::write_color(color, SAMPLES_PER_PIXEL);
+        });
+
+        threads.push(handle);
+    }
+
+    for handle in threads {
+        handle.join().unwrap();
+    }
+
+    // return;
 
     // rendering from left upper corner to right lower corner
     for j in (0..IMAGE_HEIGHT).rev() {
