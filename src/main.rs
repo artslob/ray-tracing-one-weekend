@@ -1,8 +1,11 @@
 use crate::sphere::Sphere;
 use crate::vec3::{Color, Point3, Vec3};
-use rand::Rng;
-use std::sync::Arc;
+use rand::{thread_rng, Rng};
+use std::sync::mpsc;
+use std::sync::mpsc::RecvError;
+use std::sync::{Arc, Mutex};
 use std::thread;
+use std::thread::JoinHandle;
 
 mod camera;
 mod hittable;
@@ -57,44 +60,82 @@ fn main() {
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
-    let mut threads = vec![];
+    let mut threads: Vec<JoinHandle<()>> = vec![];
+    let (tx, rx) = mpsc::channel::<i32>();
+    let rx = Arc::new(Mutex::new(rx));
 
-    for _ in 0..10 {
-        let thread_world = Arc::clone(&the_world);
-        let thread_camera = Arc::clone(&camera);
+    for _ in 0..3 {
+        let the_world = Arc::clone(&the_world);
+        let camera = Arc::clone(&camera);
+        let rx = Arc::clone(&rx);
 
         let handle = thread::spawn(move || {
-            let i = 0;
-            let j = 0;
+            // println!("started");
+            loop {
+                let j = match rx.lock().unwrap().recv() {
+                    Ok(j) => j,
+                    Err(_) => {
+                        // println!("{}", e);
+                        return;
+                    }
+                };
+                println!("received {}", j);
+                let start = std::time::Instant::now();
+                for i in 0..IMAGE_WIDTH {
+                    // println!("{}", i);
+                    let mut color = Color::new(0., 0., 0.);
 
-            let mut color = Color::new(0., 0., 0.);
+                    for s in 0..SAMPLES_PER_PIXEL {
+                        let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+                        let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
+                        // let u = (i as f64 + 0.3) / (IMAGE_WIDTH - 1) as f64;
+                        // let v = (j as f64 + 0.7) / (IMAGE_HEIGHT - 1) as f64;
 
-            for _ in 0..SAMPLES_PER_PIXEL {
-                let u = (i as f64 + rand::thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-                let v = (j as f64 + rand::thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
+                        // println!("sample {}", s);
+                        camera
+                            .get_ray(u, v).ray_color(&*the_world, MAX_DEPTH);
 
-                color += thread_camera
-                    .get_ray(u, v)
-                    .ray_color(&thread_world, MAX_DEPTH);
+                        // color += camera
+                        //     .get_ray(u, v)
+                        //     .ray_color(&the_world, MAX_DEPTH);
+                    }
+
+                    // Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                }
+                let elapsed = start.elapsed();
+
+                eprintln!(
+                    "time elapsed {:?} {:?} {:?}",
+                    elapsed,
+                    elapsed.as_nanos(),
+                    elapsed.as_millis()
+                );
+                println!("processed {}", j);
             }
-
-            Vec3::write_color(color, SAMPLES_PER_PIXEL);
         });
 
         threads.push(handle);
     }
 
+    // for j in (0..IMAGE_HEIGHT).rev() {
+    for j in (0..30).rev() {
+        tx.send(j).unwrap();
+    }
+
+    drop(tx);
+
     for handle in threads {
         handle.join().unwrap();
     }
 
-    // return;
+    return;
 
     // rendering from left upper corner to right lower corner
     for j in (0..IMAGE_HEIGHT).rev() {
         eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
+        let start = std::time::Instant::now();
+
         for i in 0..IMAGE_WIDTH {
-            let start = std::time::Instant::now();
             let mut color = Color::new(0., 0., 0.);
 
             for _ in 0..SAMPLES_PER_PIXEL {
@@ -104,15 +145,15 @@ fn main() {
                 color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
             }
 
-            Vec3::write_color(color, SAMPLES_PER_PIXEL);
-            let elapsed = start.elapsed();
-            eprintln!(
-                "time elapsed {:?} {:?} {:?}",
-                elapsed,
-                elapsed.as_nanos(),
-                elapsed.as_millis()
-            );
+            // Vec3::write_color(color, SAMPLES_PER_PIXEL);
         }
+        let elapsed = start.elapsed();
+        eprintln!(
+            "time elapsed {:?} {:?} {:?}",
+            elapsed,
+            elapsed.as_nanos(),
+            elapsed.as_millis()
+        );
         println!();
     }
 }
