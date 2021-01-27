@@ -1,11 +1,12 @@
-use crate::sphere::Sphere;
-use crate::vec3::{Color, Point3, Vec3};
-use rand::{thread_rng, Rng};
 use std::sync::mpsc;
-use std::sync::mpsc::RecvError;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
+
+use rand::{thread_rng, Rng};
+
+use crate::sphere::Sphere;
+use crate::vec3::{Color, Point3, Vec3};
 
 mod camera;
 mod hittable;
@@ -55,8 +56,6 @@ fn main() {
         dist_to_focus,
     ));
 
-    let mut rng = rand::thread_rng();
-
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
@@ -81,44 +80,34 @@ fn main() {
                 };
                 println!("received {}", j);
                 let start = std::time::Instant::now();
+
                 for i in 0..IMAGE_WIDTH {
-                    // println!("{}", i);
                     let mut color = Color::new(0., 0., 0.);
 
-                    for s in 0..SAMPLES_PER_PIXEL {
+                    for _ in 0..SAMPLES_PER_PIXEL {
                         let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
                         let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
-                        // let u = (i as f64 + 0.3) / (IMAGE_WIDTH - 1) as f64;
-                        // let v = (j as f64 + 0.7) / (IMAGE_HEIGHT - 1) as f64;
 
-                        // println!("sample {}", s);
-                        camera
-                            .get_ray(u, v).ray_color(&*the_world, MAX_DEPTH);
-
-                        // color += camera
-                        //     .get_ray(u, v)
-                        //     .ray_color(&the_world, MAX_DEPTH);
+                        color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
                     }
 
                     // Vec3::write_color(color, SAMPLES_PER_PIXEL);
                 }
                 let elapsed = start.elapsed();
-
-                eprintln!(
+                println!(
                     "time elapsed {:?} {:?} {:?}",
                     elapsed,
                     elapsed.as_nanos(),
                     elapsed.as_millis()
                 );
-                println!("processed {}", j);
+                // println!();
             }
         });
 
         threads.push(handle);
     }
 
-    // for j in (0..IMAGE_HEIGHT).rev() {
-    for j in (0..30).rev() {
+    for j in (0..IMAGE_HEIGHT).rev() {
         tx.send(j).unwrap();
     }
 
@@ -139,8 +128,8 @@ fn main() {
             let mut color = Color::new(0., 0., 0.);
 
             for _ in 0..SAMPLES_PER_PIXEL {
-                let u = (i as f64 + rng.gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-                let v = (j as f64 + rng.gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
+                let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+                let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
 
                 color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
             }
