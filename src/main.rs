@@ -91,24 +91,14 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                 let j = match rx.lock().unwrap().recv() {
                     Ok(j) => j,
                     Err(_) => {
-                        // println!("exiting thread: {}", e);
+                        // eprintln!("exiting thread: {}", e);
                         return;
                     }
                 };
-                // eprintln!("received {}", j);
                 let start = std::time::Instant::now();
 
                 for i in 0..IMAGE_WIDTH {
-                    let mut color = Color::new(0., 0., 0.);
-
-                    for _ in 0..SAMPLES_PER_PIXEL {
-                        let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-                        let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
-
-                        color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
-                    }
-
-                    // Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                    let color = calc_color(&camera, &the_world, i, j);
                     color_tx.send(color).unwrap();
                 }
                 eprintln!("{}", format_elapsed(start, j));
@@ -136,20 +126,25 @@ fn single_thread(camera: &camera::Camera, the_world: &world::World) {
         let start = std::time::Instant::now();
 
         for i in 0..IMAGE_WIDTH {
-            let mut color = Color::new(0., 0., 0.);
-
-            for _ in 0..SAMPLES_PER_PIXEL {
-                let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-                let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
-
-                color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
-            }
-
-            // Vec3::write_color(color, SAMPLES_PER_PIXEL);
+            let color = calc_color(camera, the_world, i, j);
+            Vec3::write_color(color, SAMPLES_PER_PIXEL);
         }
         eprintln!("{}", format_elapsed(start, j));
         println!();
     }
+}
+
+fn calc_color(camera: &camera::Camera, the_world: &world::World, i: i32, j: i32) -> Color {
+    let mut color = Color::new(0., 0., 0.);
+
+    for _ in 0..SAMPLES_PER_PIXEL {
+        let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+        let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
+
+        color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
+    }
+
+    color
 }
 
 fn format_elapsed(start: Instant, j: i32) -> String {
