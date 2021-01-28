@@ -72,7 +72,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
     let (tx, rx) = mpsc::channel::<i32>();
     let rx = Arc::new(Mutex::new(rx));
 
-    let (color_tx, color_rx) = mpsc::channel::<Color>();
+    let (row_tx, row_rx) = mpsc::channel::<Row>();
 
     threads.push(thread::spawn(move || {
         for j in (0..IMAGE_HEIGHT).rev() {
@@ -84,7 +84,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
         let the_world = Arc::clone(&the_world);
         let camera = Arc::clone(&camera);
         let rx = Arc::clone(&rx);
-        let color_tx = color_tx.clone();
+        let row_tx = row_tx.clone();
 
         threads.push(thread::spawn(move || {
             loop {
@@ -96,22 +96,25 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                     }
                 };
                 let start = std::time::Instant::now();
+                let mut colors = Vec::with_capacity(IMAGE_WIDTH as usize);
 
                 for i in 0..IMAGE_WIDTH {
                     let color = calc_color(&camera, &the_world, i, j);
-                    color_tx.send(color).unwrap();
+                    colors.push(color);
                 }
+                row_tx.send(Row{ colors, j }).unwrap();
                 eprintln!("{}", format_elapsed(start, j));
-                println!();
             }
         }));
     }
 
-    drop(color_tx);
+    drop(row_tx);
 
-    for color in color_rx {
-        // TODO send rows of colors and sort them
-        Vec3::write_color(color, SAMPLES_PER_PIXEL);
+    for row in row_rx {
+        // TODO sort rows
+        for color in row.colors {
+            Vec3::write_color(color, SAMPLES_PER_PIXEL);
+        }
     }
 
     for handle in threads {
@@ -145,6 +148,11 @@ fn calc_color(camera: &camera::Camera, the_world: &world::World, i: i32, j: i32)
     }
 
     color
+}
+
+struct Row {
+    colors: Vec<Color>,
+    j: i32,
 }
 
 fn format_elapsed(start: Instant, j: i32) -> String {
