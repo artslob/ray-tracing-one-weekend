@@ -6,6 +6,8 @@ use std::thread::JoinHandle;
 use rand::{thread_rng, Rng};
 
 use crate::vec3::{Color, Point3, Vec3};
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 use std::time::Instant;
 
 mod camera;
@@ -69,14 +71,14 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
     eprintln!("running on {} threads", thread_count);
 
     let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(thread_count);
-    let (tx, rx) = mpsc::channel::<i32>();
+    let (tx, rx) = mpsc::channel::<(usize, i32)>();
     let rx = Arc::new(Mutex::new(rx));
 
     let (row_tx, row_rx) = mpsc::channel::<Row>();
 
     threads.push(thread::spawn(move || {
-        for j in (0..IMAGE_HEIGHT).rev() {
-            tx.send(j).unwrap();
+        for (enumerator, j) in (0..IMAGE_HEIGHT).rev().enumerate() {
+            tx.send((enumerator, j)).unwrap();
         }
     }));
 
@@ -88,8 +90,8 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
 
         threads.push(thread::spawn(move || {
             loop {
-                let j = match rx.lock().unwrap().recv() {
-                    Ok(j) => j,
+                let (enumerator, j) = match rx.lock().unwrap().recv() {
+                    Ok((enumerator, j)) => (enumerator, j),
                     Err(_) => {
                         // eprintln!("exiting thread: {}", e);
                         return;
@@ -102,7 +104,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                     let color = calc_color(&camera, &the_world, i, j);
                     colors.push(color);
                 }
-                row_tx.send(Row{ colors, j }).unwrap();
+                row_tx.send(Row { colors, enumerator }).unwrap();
                 eprintln!("{}", format_elapsed(start, j));
             }
         }));
@@ -110,11 +112,12 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
 
     drop(row_tx);
 
+    let mut heap = BinaryHeap::new();
+
     for row in row_rx {
         // TODO sort rows
-        for color in row.colors {
-            Vec3::write_color(color, SAMPLES_PER_PIXEL);
-        }
+        eprintln!("{}", row.enumerator);
+        heap.push(row);
     }
 
     for handle in threads {
@@ -152,8 +155,28 @@ fn calc_color(camera: &camera::Camera, the_world: &world::World, i: i32, j: i32)
 
 struct Row {
     colors: Vec<Color>,
-    j: i32,
+    enumerator: usize,
 }
+
+impl Ord for Row {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.enumerator.cmp(&other.enumerator)
+    }
+}
+
+impl PartialOrd for Row {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Row {
+    fn eq(&self, other: &Self) -> bool {
+        self.enumerator.eq(&other.enumerator)
+    }
+}
+
+impl Eq for Row {}
 
 fn format_elapsed(start: Instant, j: i32) -> String {
     let elapsed = start.elapsed();
