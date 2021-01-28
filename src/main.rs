@@ -6,6 +6,7 @@ use std::thread::JoinHandle;
 use rand::{thread_rng, Rng};
 
 use crate::vec3::{Color, Point3, Vec3};
+use std::time::Instant;
 
 mod camera;
 mod hittable;
@@ -110,13 +111,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                     // Vec3::write_color(color, SAMPLES_PER_PIXEL);
                     color_tx.send(color).unwrap();
                 }
-                let elapsed = start.elapsed();
-                eprintln!(
-                    "time elapsed on {} {:?} {:?}",
-                    j,
-                    elapsed,
-                    elapsed.as_nanos(),
-                );
+                eprintln!("{}", format_elapsed(start, j));
                 println!();
             }
         }));
@@ -152,15 +147,19 @@ fn single_thread(camera: &camera::Camera, the_world: &world::World) {
 
             // Vec3::write_color(color, SAMPLES_PER_PIXEL);
         }
-        let elapsed = start.elapsed();
-        eprintln!(
-            "time elapsed {:?} {:?} {:?}",
-            elapsed,
-            elapsed.as_nanos(),
-            elapsed.as_millis()
-        );
+        eprintln!("{}", format_elapsed(start, j));
         println!();
     }
+}
+
+fn format_elapsed(start: Instant, j: i32) -> String {
+    let elapsed = start.elapsed();
+    format!(
+        "time elapsed on {} {:?} {:?}",
+        j,
+        elapsed,
+        elapsed.as_nanos(),
+    )
 }
 
 #[cfg(test)]
