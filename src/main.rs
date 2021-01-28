@@ -5,7 +5,6 @@ use std::thread::JoinHandle;
 
 use rand::{thread_rng, Rng};
 
-use crate::sphere::Sphere;
 use crate::vec3::{Color, Point3, Vec3};
 
 mod camera;
@@ -17,17 +16,17 @@ mod utils;
 mod vec3;
 mod world;
 
+const ASPECT_RATIO: f64 = 3.0 / 2.0;
+
+// image
+const IMAGE_WIDTH: i32 = 1200;
+const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
+const BRIGHTNESS: i32 = 255;
+const SAMPLES_PER_PIXEL: i32 = 500;
+const MAX_DEPTH: i32 = 50;
+
 fn main() {
-    const ASPECT_RATIO: f64 = 3.0 / 2.0;
-
-    // image
-    const IMAGE_WIDTH: i32 = 1200;
-    const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
-    const BRIGHTNESS: i32 = 255;
-    const SAMPLES_PER_PIXEL: i32 = 500;
-    const MAX_DEPTH: i32 = 50;
-
-    let the_world = Arc::new(make_world());
+    let the_world = Arc::new(world::World::with_items());
 
     let lookfrom = Point3 {
         x: 13.0,
@@ -59,22 +58,28 @@ fn main() {
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
-    let mut threads: Vec<JoinHandle<()>> = vec![];
-    let (tx, rx) = mpsc::channel::<i32>();
-    let rx = Arc::new(Mutex::new(rx));
+    multiple_threads(&camera, &the_world);
+    single_thread(&camera, &the_world);
+}
 
+fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>) {
     let thread_count = match ::num_cpus::get() {
         0..=1 => 1,
         n => n - 1,
     };
-    eprintln!("{}", thread_count);
+    eprintln!("running on {} threads", thread_count);
+
+    let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(thread_count);
+    let (tx, rx) = mpsc::channel::<i32>();
+    let rx = Arc::new(Mutex::new(rx));
 
     for _ in 0..thread_count {
         let the_world = Arc::clone(&the_world);
         let camera = Arc::clone(&camera);
         let rx = Arc::clone(&rx);
 
-        let handle = thread::spawn(move || {
+        // let handle = ;
+        threads.push(thread::spawn(move || {
             // println!("started");
             loop {
                 let j = match rx.lock().unwrap().recv() {
@@ -108,9 +113,7 @@ fn main() {
                 );
                 // println!();
             }
-        });
-
-        threads.push(handle);
+        }));
     }
 
     for j in (0..IMAGE_HEIGHT).rev() {
@@ -122,9 +125,9 @@ fn main() {
     for handle in threads {
         handle.join().unwrap();
     }
+}
 
-    return;
-
+fn single_thread(camera: &camera::Camera, the_world: &world::World) {
     // rendering from left upper corner to right lower corner
     for j in (0..IMAGE_HEIGHT).rev() {
         eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
@@ -151,102 +154,6 @@ fn main() {
         );
         println!();
     }
-}
-
-fn make_world() -> world::World {
-    let mut the_world = world::World::new(vec![]);
-
-    let material_ground = materials::Lambertian::new(Color {
-        x: 0.5,
-        y: 0.5,
-        z: 0.5,
-    });
-    the_world.add(Box::new(Sphere::new(
-        Point3 {
-            x: 0.0,
-            y: -1000.,
-            z: 0.0,
-        },
-        1000.,
-        Box::new(material_ground),
-    )));
-
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat = utils::random_double();
-            let center = Point3 {
-                x: a as f64 + 0.9 * utils::random_double(),
-                y: 0.2,
-                z: b as f64 + 0.9 * utils::random_double(),
-            };
-            let another_point = Point3 {
-                x: 4.,
-                y: 0.2,
-                z: 0.,
-            };
-
-            if (center - another_point).length() <= 0.9 {
-                continue;
-            }
-
-            let sphere_material: Box<dyn materials::Material + Send + Sync> = if choose_mat < 0.8 {
-                // diffuse
-                let albedo = Color::random() * Color::random();
-                Box::new(materials::Lambertian::new(albedo))
-            } else if choose_mat < 0.95 {
-                // metal
-                let albedo = Color::random_range(0.5, 1.);
-                let fuzz = utils::random_double_range(0., 0.5);
-                Box::new(materials::Metal::new(albedo, fuzz))
-            } else {
-                // glass
-                Box::new(materials::Dielectric::new(1.5))
-            };
-
-            the_world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
-        }
-    }
-
-    the_world.add(Box::new(Sphere::new(
-        Point3 {
-            x: 0.0,
-            y: 1.0,
-            z: 0.0,
-        },
-        1.,
-        Box::new(materials::Dielectric::new(1.5)),
-    )));
-    the_world.add(Box::new(Sphere::new(
-        Point3 {
-            x: -4.0,
-            y: 1.0,
-            z: 0.0,
-        },
-        1.,
-        Box::new(materials::Lambertian::new(Color {
-            x: 0.4,
-            y: 0.2,
-            z: 0.1,
-        })),
-    )));
-    the_world.add(Box::new(Sphere::new(
-        Point3 {
-            x: 4.0,
-            y: 1.0,
-            z: 0.0,
-        },
-        1.,
-        Box::new(materials::Metal::new(
-            Color {
-                x: 0.7,
-                y: 0.6,
-                z: 0.5,
-            },
-            0.1,
-        )),
-    )));
-
-    the_world
 }
 
 #[cfg(test)]
