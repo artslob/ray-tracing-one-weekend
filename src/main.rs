@@ -63,7 +63,13 @@ fn main() {
     let (tx, rx) = mpsc::channel::<i32>();
     let rx = Arc::new(Mutex::new(rx));
 
-    for _ in 0..3 {
+    let thread_count = match ::num_cpus::get() {
+        0..=1 => 1,
+        n => n - 1,
+    };
+    eprintln!("{}", thread_count);
+
+    for _ in 0..thread_count {
         let the_world = Arc::clone(&the_world);
         let camera = Arc::clone(&camera);
         let rx = Arc::clone(&rx);
