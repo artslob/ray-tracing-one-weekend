@@ -59,7 +59,7 @@ fn main() {
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
     multiple_threads(&camera, &the_world);
-    single_thread(&camera, &the_world);
+    // single_thread(&camera, &the_world);
 }
 
 fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>) {
@@ -73,14 +73,18 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
     let (tx, rx) = mpsc::channel::<i32>();
     let rx = Arc::new(Mutex::new(rx));
 
+    threads.push(thread::spawn(move || {
+        for j in (0..IMAGE_HEIGHT).rev() {
+            tx.send(j).unwrap();
+        }
+    }));
+
     for _ in 0..thread_count {
         let the_world = Arc::clone(&the_world);
         let camera = Arc::clone(&camera);
         let rx = Arc::clone(&rx);
 
-        // let handle = ;
         threads.push(thread::spawn(move || {
-            // println!("started");
             loop {
                 let j = match rx.lock().unwrap().recv() {
                     Ok(j) => j,
@@ -89,7 +93,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                         return;
                     }
                 };
-                println!("received {}", j);
+                // eprintln!("received {}", j);
                 let start = std::time::Instant::now();
 
                 for i in 0..IMAGE_WIDTH {
@@ -105,22 +109,16 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                     // Vec3::write_color(color, SAMPLES_PER_PIXEL);
                 }
                 let elapsed = start.elapsed();
-                println!(
-                    "time elapsed {:?} {:?} {:?}",
+                eprintln!(
+                    "time elapsed on {} {:?} {:?}",
+                    j,
                     elapsed,
                     elapsed.as_nanos(),
-                    elapsed.as_millis()
                 );
-                // println!();
+                println!();
             }
         }));
     }
-
-    for j in (0..IMAGE_HEIGHT).rev() {
-        tx.send(j).unwrap();
-    }
-
-    drop(tx);
 
     for handle in threads {
         handle.join().unwrap();
