@@ -17,8 +17,6 @@ mod vec3;
 mod world;
 
 const ASPECT_RATIO: f64 = 3.0 / 2.0;
-
-// image
 const IMAGE_WIDTH: i32 = 1200;
 const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
 const BRIGHTNESS: i32 = 255;
@@ -73,6 +71,8 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
     let (tx, rx) = mpsc::channel::<i32>();
     let rx = Arc::new(Mutex::new(rx));
 
+    let (color_tx, color_rx) = mpsc::channel::<Color>();
+
     threads.push(thread::spawn(move || {
         for j in (0..IMAGE_HEIGHT).rev() {
             tx.send(j).unwrap();
@@ -83,13 +83,14 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
         let the_world = Arc::clone(&the_world);
         let camera = Arc::clone(&camera);
         let rx = Arc::clone(&rx);
+        let color_tx = color_tx.clone();
 
         threads.push(thread::spawn(move || {
             loop {
                 let j = match rx.lock().unwrap().recv() {
                     Ok(j) => j,
                     Err(_) => {
-                        // println!("{}", e);
+                        // println!("exiting thread: {}", e);
                         return;
                     }
                 };
@@ -107,6 +108,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                     }
 
                     // Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                    color_tx.send(color).unwrap();
                 }
                 let elapsed = start.elapsed();
                 eprintln!(
@@ -118,6 +120,13 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                 println!();
             }
         }));
+    }
+
+    drop(color_tx);
+
+    for color in color_rx {
+        // TODO send rows of colors and sort them
+        Vec3::write_color(color, SAMPLES_PER_PIXEL);
     }
 
     for handle in threads {
