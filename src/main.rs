@@ -113,12 +113,25 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
     drop(row_tx);
 
     let mut heap = BinaryHeap::new();
+    let mut heap_cursor = 0;
 
     for row in row_rx {
-        // TODO sort rows
-        eprintln!("{}", row.enumerator);
         heap.push(row);
+
+        while let Some(row) = heap.peek() {
+            if row.enumerator != heap_cursor {
+                break;
+            }
+            if let Some(row) = heap.pop() {
+                for color in row.colors {
+                    Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                }
+            }
+            heap_cursor += 1;
+        }
     }
+
+    assert_eq!(heap.len(), 0);
 
     for handle in threads {
         handle.join().unwrap();
@@ -160,7 +173,8 @@ struct Row {
 
 impl Ord for Row {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.enumerator.cmp(&other.enumerator)
+        // reverse order: from smallest to biggest
+        other.enumerator.cmp(&self.enumerator)
     }
 }
 

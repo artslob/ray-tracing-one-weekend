@@ -18,7 +18,7 @@ cargo run --release > image.ppm; convert image.ppm image.png
 
 Преследовал я 2 цели, первую достиг, вторую не очень:
 1. Прежде всего я изучал rust. Туториал написан на c++, так что по сути я переписывал плюсы на rust.
-   Эту цель я достиг, так как больше узнал про модули, тесты и static/dynamic dispatch.
+   Эту цель я достиг, так как больше узнал про модули, тесты, static/dynamic dispatch и многопоточность.
 2. Заодно с изучением языка я хотел узнать как работает трассировка лучей. Не скажу, что туториал
    хорошо объясняет материал, хотелось бы больше объяснений на пальцах. Поэтому не уверен, что буду
    проходить оставшиеся 2 туториала из серии.
@@ -37,7 +37,8 @@ This is first of three tutorial in [series](https://raytracing.github.io).
 
 I set 2 goals:
 1. First of all I was learning rust. Tutorial is written in C++, so I just rewrote it to rust.
-   I reached this goal because learned more about tests, modules and static/dynamic dispatch.
+   I reached this goal because learned more about tests, modules and static/dynamic dispatch
+   and multithreading.
 2. At the same time I wanted to learn about ray tracing. I cant recommend this tutorial, I think
    it lacks more versatile explanations. Not sure about completing full series.
 
