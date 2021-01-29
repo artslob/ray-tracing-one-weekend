@@ -70,7 +70,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
     };
     eprintln!("running on {} threads", thread_count);
 
-    let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(thread_count);
+    let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(thread_count + 1);
     let (tx, rx) = mpsc::channel::<(usize, i32)>();
     let rx = Arc::new(Mutex::new(rx));
 
