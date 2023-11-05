@@ -6,11 +6,13 @@ use std::thread::JoinHandle;
 use rand::{thread_rng, Rng};
 
 use crate::vec3::{Color, Point3, Vec3};
+use clap::Parser;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::time::Instant;
 
 mod camera;
+mod cli;
 mod hittable;
 mod materials;
 mod ray;
@@ -56,11 +58,18 @@ fn main() {
         dist_to_focus,
     ));
 
+    let args = cli::Args::parse();
+
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
-    multiple_threads(&camera, &the_world);
-    // single_thread(&camera, &the_world);
+    if args.single_thread {
+        eprintln!("use single thread");
+        single_thread(&camera, &the_world);
+    } else {
+        eprintln!("use multiple threads");
+        multiple_threads(&camera, &the_world);
+    }
 }
 
 fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>) {

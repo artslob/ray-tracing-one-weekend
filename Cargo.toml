@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 rand = "0.8.1"
 num_cpus = "1.13.0"
+clap = { version = "4.4", features = ["derive"] }
