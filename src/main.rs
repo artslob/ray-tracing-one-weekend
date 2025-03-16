@@ -202,13 +202,8 @@ impl PartialEq for Row {
 impl Eq for Row {}
 
 fn format_elapsed(start: Instant, j: i32) -> String {
-    let elapsed = start.elapsed();
-    format!(
-        "time elapsed on {} {:?} {:?}",
-        j,
-        elapsed,
-        elapsed.as_nanos(),
-    )
+    let elapsed = humantime::format_duration(start.elapsed());
+    format!("time elapsed on {j}: {elapsed}")
 }
 
 #[cfg(test)]
