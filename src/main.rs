@@ -63,6 +63,8 @@ fn main() {
     // header of ppm image file
     println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
 
+    let start = Instant::now();
+
     if args.single_thread {
         eprintln!("use single thread");
         single_thread(&camera, &the_world);
@@ -70,6 +72,8 @@ fn main() {
         eprintln!("use multiple threads");
         multiple_threads(&camera, &the_world);
     }
+
+    eprintln!("total time: {}", humantime::format_duration(start.elapsed()));
 }
 
 fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>) {
@@ -106,7 +110,7 @@ fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>)
                         return;
                     }
                 };
-                let start = std::time::Instant::now();
+                let start = Instant::now();
                 let mut colors = Vec::with_capacity(IMAGE_WIDTH as usize);
 
                 for i in 0..IMAGE_WIDTH {
@@ -151,7 +155,7 @@ fn single_thread(camera: &camera::Camera, the_world: &world::World) {
     // rendering from left upper corner to right lower corner
     for j in (0..IMAGE_HEIGHT).rev() {
         eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
-        let start = std::time::Instant::now();
+        let start = Instant::now();
 
         for i in 0..IMAGE_WIDTH {
             let color = calc_color(camera, the_world, i, j);
