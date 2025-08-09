@@ -9,6 +9,7 @@ use std::time::Instant;
 use clap::Parser;
 use itertools::Itertools;
 
+use crate::rng::Random;
 use crate::vec3::{Color, Point3, Vec3};
 
 mod camera;
@@ -16,6 +17,7 @@ mod cli;
 mod hittable;
 mod materials;
 mod ray;
+mod rng;
 mod sphere;
 mod utils;
 mod vec3;
@@ -27,7 +29,8 @@ const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
 const BRIGHTNESS: i32 = 255;
 
 fn main() {
-    let the_world = Arc::new(world::World::with_items());
+    let random = rng::Random::from_seed(12345);
+    let world = Arc::new(world::World::with_items());
 
     let lookfrom = Point3 {
         x: 13.0,
@@ -61,7 +64,8 @@ fn main() {
 
     let renderer = Renderer {
         camera: Arc::clone(&camera),
-        world: Arc::clone(&the_world),
+        world: Arc::clone(&world),
+        random: random.clone(),
         samples_per_pixel: args.samples_per_pixel,
         max_depth: args.max_depth,
     };
@@ -84,6 +88,7 @@ fn main() {
 struct Renderer {
     camera: Arc<camera::Camera>,
     world: Arc<world::World>,
+    random: Random,
     samples_per_pixel: u32,
     max_depth: u32,
 }
@@ -175,8 +180,8 @@ impl Renderer {
     fn calc_color(&self, i: i32, j: i32) -> Color {
         (0..self.samples_per_pixel)
             .map(|_| {
-                let u = (i as f64 + utils::random_double()) / (IMAGE_WIDTH - 1) as f64;
-                let v = (j as f64 + utils::random_double()) / (IMAGE_HEIGHT - 1) as f64;
+                let u = (i as f64 + self.random.random_f64()) / (IMAGE_WIDTH - 1) as f64;
+                let v = (j as f64 + self.random.random_f64()) / (IMAGE_HEIGHT - 1) as f64;
 
                 self.camera
                     .get_ray(u, v)
