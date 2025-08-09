@@ -9,7 +9,8 @@ use std::time::Instant;
 use clap::Parser;
 use itertools::Itertools;
 
-use crate::output::{PpmOutput, Output};
+use crate::output::{Output, PpmOutput};
+use crate::params::Params;
 use crate::rng::Random;
 use crate::vec3::{Color, Point3, Vec3};
 
@@ -18,6 +19,7 @@ mod cli;
 mod hittable;
 mod materials;
 mod output;
+mod params;
 mod ray;
 mod rng;
 mod sphere;
@@ -34,6 +36,7 @@ fn main() {
     let args = cli::Args::parse();
 
     let random = rng::Random::from_seed(12345);
+    let params = params::Params::from(&args);
     let world = Arc::new(world::World::new(random.clone()).with_items());
 
     let lookfrom = Point3 {
@@ -69,9 +72,8 @@ fn main() {
             image_height: IMAGE_HEIGHT,
             brightness: BRIGHTNESS,
         },
-        random: random.clone(),
-        samples_per_pixel: args.samples_per_pixel,
-        max_depth: args.max_depth,
+        random,
+        params,
     };
 
     renderer.output.header();
@@ -96,8 +98,7 @@ struct Renderer<O: Output> {
     world: Arc<world::World>,
     output: O,
     random: Random,
-    samples_per_pixel: u32,
-    max_depth: u32,
+    params: Params,
 }
 
 impl<O: Output> Renderer<O> {
@@ -155,7 +156,7 @@ impl<O: Output> Renderer<O> {
                 }
                 if let Some(row) = heap.pop() {
                     for color in row.colors {
-                        let color = Vec3::create_color(color, self.samples_per_pixel);
+                        let color = Vec3::create_color(color, self.params.samples_per_pixel);
                         self.output.color(color);
                     }
                 }
@@ -178,7 +179,7 @@ impl<O: Output> Renderer<O> {
 
             for i in 0..IMAGE_WIDTH {
                 let color = self.calc_color(i, j);
-                let color = Vec3::create_color(color, self.samples_per_pixel);
+                let color = Vec3::create_color(color, self.params.samples_per_pixel);
                 self.output.color(color);
             }
             eprintln!("{}", format_elapsed(start, j));
@@ -187,14 +188,14 @@ impl<O: Output> Renderer<O> {
     }
 
     fn calc_color(&self, i: i32, j: i32) -> Color {
-        (0..self.samples_per_pixel)
+        (0..self.params.samples_per_pixel)
             .map(|_| {
                 let u = (i as f64 + self.random.random_f64()) / (IMAGE_WIDTH - 1) as f64;
                 let v = (j as f64 + self.random.random_f64()) / (IMAGE_HEIGHT - 1) as f64;
 
                 self.camera
                     .get_ray(&self.random, u, v)
-                    .ray_color(&self.world, self.max_depth)
+                    .ray_color(&self.world, self.params.max_depth)
             })
             .fold(Color::origin(), |a, b| a + b)
     }
