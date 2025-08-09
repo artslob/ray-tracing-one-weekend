@@ -20,7 +20,7 @@ pub fn clamp(x: f64, min: f64, max: f64) -> f64 {
 
 pub fn random_double() -> f64 {
     // returns a random real in [0,1)
-    rand::thread_rng().gen::<f64>()
+    rand::rng().random::<f64>()
 }
 
 pub fn random_double_range(min: f64, max: f64) -> f64 {

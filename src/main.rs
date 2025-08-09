@@ -8,7 +8,6 @@ use std::time::Instant;
 
 use clap::Parser;
 use itertools::Itertools;
-use rand::{thread_rng, Rng};
 
 use crate::vec3::{Color, Point3, Vec3};
 
@@ -176,8 +175,8 @@ impl Renderer {
     fn calc_color(&self, i: i32, j: i32) -> Color {
         (0..self.samples_per_pixel)
             .map(|_| {
-                let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-                let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
+                let u = (i as f64 + utils::random_double()) / (IMAGE_WIDTH - 1) as f64;
+                let v = (j as f64 + utils::random_double()) / (IMAGE_HEIGHT - 1) as f64;
 
                 self.camera
                     .get_ray(u, v)
