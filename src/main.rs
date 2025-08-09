@@ -35,6 +35,7 @@ const BRIGHTNESS: u32 = 255;
 fn main() {
     let args = cli::Args::parse();
 
+    // TODO random seed
     let random = rng::Random::from_seed(12345);
     let params = params::Params {
         samples_per_pixel: args.samples_per_pixel,
@@ -42,44 +43,18 @@ fn main() {
         image_width: IMAGE_WIDTH,
         image_height: IMAGE_HEIGHT,
     };
-    let world = Arc::new(world::World::new(random.clone()).with_items());
-
-    let lookfrom = Point3 {
-        x: 13.0,
-        y: 2.0,
-        z: 3.0,
-    };
-    let lookat = Point3::origin();
-    let vup = Vec3 {
-        x: 0.0,
-        y: 1.0,
-        z: 0.0,
-    };
-    let dist_to_focus = 10.;
-    let aperture = 0.1;
-    let camera = Arc::new(camera::Camera::new(
-        lookfrom,
-        lookat,
-        vup,
-        20.,
-        ASPECT_RATIO,
-        aperture,
-        dist_to_focus,
-    ));
 
     let start = Instant::now();
 
-    let renderer = Renderer {
-        camera: Arc::clone(&camera),
-        world: Arc::clone(&world),
-        output: PpmOutput {
+    let renderer = Renderer::new(
+        PpmOutput {
             image_width: params.image_width,
             image_height: params.image_height,
             brightness: BRIGHTNESS,
         },
         random,
         params,
-    };
+    );
 
     renderer.output.header();
 
@@ -107,6 +82,38 @@ struct Renderer<O: Output> {
 }
 
 impl<O: Output> Renderer<O> {
+    fn new(output: O, random: Random, params: Params) -> Self {
+        let lookfrom = Point3 {
+            x: 13.0,
+            y: 2.0,
+            z: 3.0,
+        };
+        let lookat = Point3::origin();
+        let vup = Vec3 {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        };
+        let dist_to_focus = 10.;
+        let aperture = 0.1;
+        let camera = Arc::new(camera::Camera::new(
+            lookfrom,
+            lookat,
+            vup,
+            20.,
+            ASPECT_RATIO,
+            aperture,
+            dist_to_focus,
+        ));
+        Self {
+            camera,
+            world: Arc::new(world::World::new(random.clone()).with_items()),
+            output,
+            random,
+            params,
+        }
+    }
+
     fn multiple_threads(&self) {
         let thread_count = match ::num_cpus::get() {
             0..=1 => 1,
@@ -242,8 +249,42 @@ fn format_elapsed(start: Instant, j: u32) -> String {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::utils::compare_floats;
     use crate::vec3::Vec3;
+    use crate::Renderer;
+    use output::OutputColor;
+
+    #[derive(Clone)]
+    struct MockOutput {
+        colors: Arc<Mutex<Vec<OutputColor>>>,
+    }
+
+    impl output::Output for MockOutput {
+        fn header(&self) {}
+
+        fn color(&self, color: OutputColor) {
+            self.colors.lock().unwrap().push(color);
+        }
+    }
+
+    #[test]
+    fn image_generation() {
+        let random = rng::Random::from_seed(12345);
+        let params = params::Params {
+            samples_per_pixel: 10,
+            max_depth: 10,
+            image_width: 120,
+            image_height: 80,
+        };
+        let output = MockOutput {
+            colors: Default::default(),
+        };
+        let renderer = Renderer::new(output, random, params);
+        renderer.multiple_threads();
+        let colors = renderer.output.colors.lock().unwrap();
+        assert_eq!(colors.len(), 9600);
+    }
 
     #[test]
     fn test_sum_origins() {
