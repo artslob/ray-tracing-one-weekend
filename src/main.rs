@@ -25,8 +25,6 @@ const ASPECT_RATIO: f64 = 3.0 / 2.0;
 const IMAGE_WIDTH: i32 = 1200;
 const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
 const BRIGHTNESS: i32 = 255;
-const SAMPLES_PER_PIXEL: i32 = 500;
-const MAX_DEPTH: i32 = 50;
 
 fn main() {
     let the_world = Arc::new(world::World::with_items());
@@ -68,6 +66,8 @@ fn main() {
     let renderer = Renderer {
         camera: Arc::clone(&camera),
         world: Arc::clone(&the_world),
+        samples_per_pixel: args.samples_per_pixel,
+        max_depth: args.max_depth,
     };
 
     if args.single_thread {
@@ -84,9 +84,12 @@ fn main() {
     );
 }
 
+#[derive(Clone)]
 struct Renderer {
     camera: Arc<camera::Camera>,
     world: Arc<world::World>,
+    samples_per_pixel: u32,
+    max_depth: u32,
 }
 
 impl Renderer {
@@ -110,8 +113,7 @@ impl Renderer {
         }));
 
         for _ in 0..thread_count {
-            let the_world = Arc::clone(&self.world);
-            let camera = Arc::clone(&self.camera);
+            let renderer = self.clone();
             let rx = Arc::clone(&rx);
             let row_tx = row_tx.clone();
 
@@ -128,7 +130,7 @@ impl Renderer {
                     let mut colors = Vec::with_capacity(IMAGE_WIDTH as usize);
 
                     for i in 0..IMAGE_WIDTH {
-                        let color = calc_color(&camera, &the_world, i, j);
+                        let color = renderer.calc_color(i, j);
                         colors.push(color);
                     }
                     row_tx.send(Row { colors, enumerator }).unwrap();
@@ -151,7 +153,7 @@ impl Renderer {
                 }
                 if let Some(row) = heap.pop() {
                     for color in row.colors {
-                        Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                        Vec3::write_color(color, self.samples_per_pixel);
                     }
                 }
                 heap_cursor += 1;
@@ -172,26 +174,29 @@ impl Renderer {
             let start = Instant::now();
 
             for i in 0..IMAGE_WIDTH {
-                let color = calc_color(&self.camera, &self.world, i, j);
-                Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                let color = self.calc_color(i, j);
+                Vec3::write_color(color, self.samples_per_pixel);
             }
             eprintln!("{}", format_elapsed(start, j));
             println!();
         }
     }
-}
 
-fn calc_color(camera: &camera::Camera, the_world: &world::World, i: i32, j: i32) -> Color {
-    let mut color = Color::new(0., 0., 0.);
+    fn calc_color(&self, i: i32, j: i32) -> Color {
+        let mut color = Color::new(0., 0., 0.);
 
-    for _ in 0..SAMPLES_PER_PIXEL {
-        let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-        let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
+        for _ in 0..self.samples_per_pixel {
+            let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+            let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
 
-        color += camera.get_ray(u, v).ray_color(&the_world, MAX_DEPTH);
+            color += self
+                .camera
+                .get_ray(u, v)
+                .ray_color(&self.world, self.max_depth);
+        }
+
+        color
     }
-
-    color
 }
 
 struct Row {

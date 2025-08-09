@@ -100,7 +100,7 @@ impl Vec3 {
         *self / self.length()
     }
 
-    pub fn write_color(color: Color, samples_per_pixel: i32) {
+    pub fn write_color(color: Color, samples_per_pixel: u32) {
         let scale = 1. / samples_per_pixel as f64;
 
         let red = Self::color_value(color.x, scale);

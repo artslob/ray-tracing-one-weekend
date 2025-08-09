@@ -16,7 +16,7 @@ impl Ray {
         self.origin + t * self.direction
     }
 
-    pub fn ray_color(&self, world: &World, depth: i32) -> Color {
+    pub fn ray_color(&self, world: &World, depth: u32) -> Color {
         const BLACK: Vec3 = Color {
             x: 0.0,
             y: 0.0,
