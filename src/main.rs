@@ -28,15 +28,20 @@ mod vec3;
 mod world;
 
 const ASPECT_RATIO: f64 = 3.0 / 2.0;
-const IMAGE_WIDTH: i32 = 1200;
-const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
-const BRIGHTNESS: i32 = 255;
+const IMAGE_WIDTH: u32 = 1200;
+const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
+const BRIGHTNESS: u32 = 255;
 
 fn main() {
     let args = cli::Args::parse();
 
     let random = rng::Random::from_seed(12345);
-    let params = params::Params::from(&args);
+    let params = params::Params {
+        samples_per_pixel: args.samples_per_pixel,
+        max_depth: args.max_depth,
+        image_width: IMAGE_WIDTH,
+        image_height: IMAGE_HEIGHT,
+    };
     let world = Arc::new(world::World::new(random.clone()).with_items());
 
     let lookfrom = Point3 {
@@ -68,8 +73,8 @@ fn main() {
         camera: Arc::clone(&camera),
         world: Arc::clone(&world),
         output: PpmOutput {
-            image_width: IMAGE_WIDTH,
-            image_height: IMAGE_HEIGHT,
+            image_width: params.image_width,
+            image_height: params.image_height,
             brightness: BRIGHTNESS,
         },
         random,
@@ -110,16 +115,19 @@ impl<O: Output> Renderer<O> {
         eprintln!("running on {} threads", thread_count);
 
         let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(thread_count + 1);
-        let (tx, rx) = mpsc::channel::<(usize, i32)>();
+        let (tx, rx) = mpsc::channel::<(usize, u32)>();
         let rx = Arc::new(Mutex::new(rx));
 
         let (row_tx, row_rx) = mpsc::channel::<Row>();
 
-        threads.push(thread::spawn(move || {
-            for (enumerator, j) in (0..IMAGE_HEIGHT).rev().enumerate() {
-                tx.send((enumerator, j)).unwrap();
-            }
-        }));
+        threads.push({
+            let image_height = self.params.image_height;
+            thread::spawn(move || {
+                for (enumerator, j) in (0..image_height).rev().enumerate() {
+                    tx.send((enumerator, j)).unwrap();
+                }
+            })
+        });
 
         for _ in 0..thread_count {
             let renderer: Renderer<O> = self.clone();
@@ -133,7 +141,7 @@ impl<O: Output> Renderer<O> {
                         return;
                     };
                     let start = Instant::now();
-                    let colors = (0..IMAGE_WIDTH)
+                    let colors = (0..renderer.params.image_width)
                         .map(|i| renderer.calc_color(i, j))
                         .collect_vec();
                     row_tx.send(Row { colors, enumerator }).unwrap();
@@ -187,7 +195,7 @@ impl<O: Output> Renderer<O> {
         }
     }
 
-    fn calc_color(&self, i: i32, j: i32) -> Color {
+    fn calc_color(&self, i: u32, j: u32) -> Color {
         (0..self.params.samples_per_pixel)
             .map(|_| {
                 let u = (i as f64 + self.random.random_f64()) / (IMAGE_WIDTH - 1) as f64;
@@ -227,7 +235,7 @@ impl PartialEq for Row {
 
 impl Eq for Row {}
 
-fn format_elapsed(start: Instant, j: i32) -> String {
+fn format_elapsed(start: Instant, j: u32) -> String {
     let elapsed = humantime::format_duration(start.elapsed());
     format!("time elapsed on {j}: {elapsed}")
 }

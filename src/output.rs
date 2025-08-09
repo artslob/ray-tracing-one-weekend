@@ -6,9 +6,9 @@ pub trait Output: Clone + Send + Sync + 'static {
 
 #[derive(Debug, Clone, Copy)]
 pub struct PpmOutput {
-    pub image_width: i32,
-    pub image_height: i32,
-    pub brightness: i32,
+    pub image_width: u32,
+    pub image_height: u32,
+    pub brightness: u32,
 }
 
 impl Output for PpmOutput {
