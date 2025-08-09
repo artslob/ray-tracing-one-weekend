@@ -184,7 +184,7 @@ impl Renderer {
                 let v = (j as f64 + self.random.random_f64()) / (IMAGE_HEIGHT - 1) as f64;
 
                 self.camera
-                    .get_ray(u, v)
+                    .get_ray(&self.random, u, v)
                     .ray_color(&self.world, self.max_depth)
             })
             .fold(Color::origin(), |a, b| a + b)

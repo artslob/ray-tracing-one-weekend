@@ -1,4 +1,5 @@
 use crate::ray::Ray;
+use crate::rng::Random;
 use crate::utils;
 use crate::vec3::{Point3, Vec3};
 
@@ -48,8 +49,8 @@ impl Camera {
         }
     }
 
-    pub fn get_ray(&self, u: f64, v: f64) -> Ray {
-        let rd = self.lens_radius * Vec3::random_in_unit_disk();
+    pub fn get_ray(&self, random: &Random, u: f64, v: f64) -> Ray {
+        let rd = self.lens_radius * Vec3::random_in_unit_disk(random);
         let offset = self.u * rd.x + self.v * rd.y;
 
         Ray::new(

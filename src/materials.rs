@@ -1,10 +1,10 @@
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
-use crate::utils;
+use crate::rng::Random;
 use crate::vec3::{Color, Vec3};
 
 pub trait Material {
-    fn scatter(&self, ray: &Ray, record: &HitRecord) -> Option<ScatterData>;
+    fn scatter(&self, ray: &Ray, record: &HitRecord, random: &Random) -> Option<ScatterData>;
 }
 
 pub struct ScatterData {
@@ -23,8 +23,8 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _ray: &Ray, record: &HitRecord) -> Option<ScatterData> {
-        let scatter_direction = record.normal + Vec3::random_unit_vector();
+    fn scatter(&self, _ray: &Ray, record: &HitRecord, random: &Random) -> Option<ScatterData> {
+        let scatter_direction = record.normal + Vec3::random_unit_vector(random);
         let scatter_direction = if scatter_direction.near_zero() {
             record.normal
         } else {
@@ -53,12 +53,12 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, ray: &Ray, record: &HitRecord) -> Option<ScatterData> {
+    fn scatter(&self, ray: &Ray, record: &HitRecord, random: &Random) -> Option<ScatterData> {
         let reflected = reflect(ray.direction.unit_vector(), record.normal);
         let attenuation = self.albedo;
         let scattered = Ray::new(
             record.point,
-            reflected + self.fuzz * Vec3::random_in_unit_sphere(),
+            reflected + self.fuzz * Vec3::random_in_unit_sphere(random),
         );
         if scattered.direction.dot(&record.normal) > 0. {
             Some(ScatterData {
@@ -91,7 +91,7 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, ray: &Ray, record: &HitRecord) -> Option<ScatterData> {
+    fn scatter(&self, ray: &Ray, record: &HitRecord, random: &Random) -> Option<ScatterData> {
         let attenuation = Color::new(1., 1., 1.);
         let refraction_ratio = if record.front_face {
             1.0 / self.refraction_index
@@ -104,7 +104,7 @@ impl Material for Dielectric {
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
         let reflect_value = reflectance(cos_theta, refraction_ratio);
-        let has_reflectance = reflect_value > utils::random_double();
+        let has_reflectance = reflect_value > random.random_f64();
         let direction = if cannot_refract || has_reflectance {
             reflect(unit_direction, record.normal)
         } else {

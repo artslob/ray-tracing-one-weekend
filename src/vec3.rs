@@ -34,17 +34,17 @@ impl Vec3 {
         }
     }
 
-    pub fn random_range(min: f64, max: f64) -> Self {
+    pub fn random_range(random: &Random, min: f64, max: f64) -> Self {
         Self {
-            x: utils::random_double_range(min, max),
-            y: utils::random_double_range(min, max),
-            z: utils::random_double_range(min, max),
+            x: random.random_f64_in_range(min, max),
+            y: random.random_f64_in_range(min, max),
+            z: random.random_f64_in_range(min, max),
         }
     }
 
-    pub fn random_in_unit_sphere() -> Self {
+    pub fn random_in_unit_sphere(random: &Random) -> Self {
         loop {
-            let random_sphere = Self::random_range(-1., 1.);
+            let random_sphere = Self::random_range(random, -1., 1.);
             if random_sphere.length_squared() >= 1. {
                 continue;
             }
@@ -52,15 +52,15 @@ impl Vec3 {
         }
     }
 
-    pub fn random_unit_vector() -> Self {
-        Self::random_in_unit_sphere().unit_vector()
+    pub fn random_unit_vector(random: &Random) -> Self {
+        Self::random_in_unit_sphere(random).unit_vector()
     }
 
-    pub fn random_in_unit_disk() -> Self {
+    pub fn random_in_unit_disk(random: &Random) -> Self {
         loop {
             let p = Self {
-                x: utils::random_double_range(-1., 1.),
-                y: utils::random_double_range(-1., 1.),
+                x: random.random_f64_in_range(-1., 1.),
+                y: random.random_f64_in_range(-1., 1.),
                 z: 0.0,
             };
             if p.length_squared() < 1. {

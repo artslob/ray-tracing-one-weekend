@@ -28,7 +28,7 @@ impl Ray {
         }
 
         if let Some(record) = world.hit(self, 0.001, std::f64::INFINITY) {
-            if let Some(scatter_data) = record.material.scatter(self, &record) {
+            if let Some(scatter_data) = record.material.scatter(self, &record, &world.random) {
                 let attenuation = scatter_data.attenuation;
                 let scattered = scatter_data.scattered;
                 return attenuation * Self::ray_color(&scattered, world, depth - 1);

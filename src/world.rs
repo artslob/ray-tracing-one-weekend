@@ -9,7 +9,7 @@ type ThreadHittable = dyn Hittable + Sync + Send;
 
 pub struct World {
     list: Vec<Box<ThreadHittable>>,
-    random: Random,
+    pub random: Random,
 }
 
 impl World {
@@ -65,7 +65,7 @@ impl World {
                         Box::new(materials::Lambertian::new(albedo))
                     } else if choose_mat < 0.95 {
                         // metal
-                        let albedo = Color::random_range(0.5, 1.);
+                        let albedo = Color::random_range(&self.random, 0.5, 1.);
                         let fuzz = self.random.random_f64_in_range(0., 0.5);
                         Box::new(materials::Metal::new(albedo, fuzz))
                     } else {
