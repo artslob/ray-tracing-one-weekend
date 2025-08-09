@@ -1,3 +1,4 @@
+use crate::rng::Random;
 use crate::utils;
 use std::cmp;
 use std::ops;
@@ -25,11 +26,11 @@ impl Vec3 {
         Vec3 { x, y, z }
     }
 
-    pub fn random() -> Self {
+    pub fn random(random: &Random) -> Self {
         Self {
-            x: utils::random_double(),
-            y: utils::random_double(),
-            z: utils::random_double(),
+            x: random.random_f64(),
+            y: random.random_f64(),
+            z: random.random_f64(),
         }
     }
 

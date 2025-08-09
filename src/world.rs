@@ -61,7 +61,7 @@ impl World {
                 let sphere_material: Box<dyn materials::Material + Send + Sync> =
                     if choose_mat < 0.8 {
                         // diffuse
-                        let albedo = Color::random() * Color::random();
+                        let albedo = Color::random(&self.random) * Color::random(&self.random);
                         Box::new(materials::Lambertian::new(albedo))
                     } else if choose_mat < 0.95 {
                         // metal
