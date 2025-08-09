@@ -30,7 +30,7 @@ const BRIGHTNESS: i32 = 255;
 
 fn main() {
     let random = rng::Random::from_seed(12345);
-    let world = Arc::new(world::World::with_items());
+    let world = Arc::new(world::World::new(random.clone()).with_items());
 
     let lookfrom = Point3 {
         x: 13.0,

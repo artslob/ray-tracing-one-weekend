@@ -20,4 +20,9 @@ impl Random {
     pub(crate) fn random_f64(&self) -> f64 {
         self.rng.lock().unwrap().random()
     }
+
+    pub fn random_f64_in_range(&self, min: f64, max: f64) -> f64 {
+        // returns a random real in [min,max)
+        min + (max - min) * self.random_f64()
+    }
 }
