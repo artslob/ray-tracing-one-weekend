@@ -1,3 +1,9 @@
+pub trait Output: Clone + Send + Sync + 'static {
+    fn header(&self);
+
+    fn color(&self, color: OutputColor);
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct PpmOutput {
     pub image_width: i32,
@@ -5,15 +11,15 @@ pub struct PpmOutput {
     pub brightness: i32,
 }
 
-impl PpmOutput {
-    pub fn header(&self) {
+impl Output for PpmOutput {
+    fn header(&self) {
         println!(
             "P3\n{} {}\n{}",
             self.image_width, self.image_height, self.brightness
         );
     }
 
-    pub fn color(&self, color: OutputColor) {
+    fn color(&self, color: OutputColor) {
         print!("{} {} {} ", color.red, color.green, color.blue);
     }
 }

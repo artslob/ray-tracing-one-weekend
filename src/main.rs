@@ -9,7 +9,7 @@ use std::time::Instant;
 use clap::Parser;
 use itertools::Itertools;
 
-use crate::output::PpmOutput;
+use crate::output::{PpmOutput, Output};
 use crate::rng::Random;
 use crate::vec3::{Color, Point3, Vec3};
 
@@ -31,6 +31,8 @@ const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
 const BRIGHTNESS: i32 = 255;
 
 fn main() {
+    let args = cli::Args::parse();
+
     let random = rng::Random::from_seed(12345);
     let world = Arc::new(world::World::new(random.clone()).with_items());
 
@@ -56,8 +58,6 @@ fn main() {
         aperture,
         dist_to_focus,
     ));
-
-    let args = cli::Args::parse();
 
     let start = Instant::now();
 
@@ -91,16 +91,16 @@ fn main() {
 }
 
 #[derive(Clone)]
-struct Renderer {
+struct Renderer<O: Output> {
     camera: Arc<camera::Camera>,
     world: Arc<world::World>,
-    output: PpmOutput,
+    output: O,
     random: Random,
     samples_per_pixel: u32,
     max_depth: u32,
 }
 
-impl Renderer {
+impl<O: Output> Renderer<O> {
     fn multiple_threads(&self) {
         let thread_count = match ::num_cpus::get() {
             0..=1 => 1,
@@ -121,7 +121,7 @@ impl Renderer {
         }));
 
         for _ in 0..thread_count {
-            let renderer = self.clone();
+            let renderer: Renderer<O> = self.clone();
             let rx = Arc::clone(&rx);
             let row_tx = row_tx.clone();
 
