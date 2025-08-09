@@ -65,104 +65,119 @@ fn main() {
 
     let start = Instant::now();
 
+    let renderer = Renderer {
+        camera: Arc::clone(&camera),
+        world: Arc::clone(&the_world),
+    };
+
     if args.single_thread {
         eprintln!("use single thread");
-        single_thread(&camera, &the_world);
+        renderer.single_thread();
     } else {
         eprintln!("use multiple threads");
-        multiple_threads(&camera, &the_world);
+        renderer.multiple_threads();
     }
 
-    eprintln!("total time: {}", humantime::format_duration(start.elapsed()));
+    eprintln!(
+        "total time: {}",
+        humantime::format_duration(start.elapsed())
+    );
 }
 
-fn multiple_threads(camera: &Arc<camera::Camera>, the_world: &Arc<world::World>) {
-    let thread_count = match ::num_cpus::get() {
-        0..=1 => 1,
-        n => n - 1,
-    };
-    eprintln!("running on {} threads", thread_count);
+struct Renderer {
+    camera: Arc<camera::Camera>,
+    world: Arc<world::World>,
+}
 
-    let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(thread_count + 1);
-    let (tx, rx) = mpsc::channel::<(usize, i32)>();
-    let rx = Arc::new(Mutex::new(rx));
+impl Renderer {
+    fn multiple_threads(&self) {
+        let thread_count = match ::num_cpus::get() {
+            0..=1 => 1,
+            n => n - 1,
+        };
+        eprintln!("running on {} threads", thread_count);
 
-    let (row_tx, row_rx) = mpsc::channel::<Row>();
+        let mut threads: Vec<JoinHandle<()>> = Vec::with_capacity(thread_count + 1);
+        let (tx, rx) = mpsc::channel::<(usize, i32)>();
+        let rx = Arc::new(Mutex::new(rx));
 
-    threads.push(thread::spawn(move || {
-        for (enumerator, j) in (0..IMAGE_HEIGHT).rev().enumerate() {
-            tx.send((enumerator, j)).unwrap();
-        }
-    }));
-
-    for _ in 0..thread_count {
-        let the_world = Arc::clone(&the_world);
-        let camera = Arc::clone(&camera);
-        let rx = Arc::clone(&rx);
-        let row_tx = row_tx.clone();
+        let (row_tx, row_rx) = mpsc::channel::<Row>();
 
         threads.push(thread::spawn(move || {
-            loop {
-                let (enumerator, j) = match rx.lock().unwrap().recv() {
-                    Ok((enumerator, j)) => (enumerator, j),
-                    Err(_) => {
-                        // eprintln!("exiting thread: {}", e);
-                        return;
-                    }
-                };
-                let start = Instant::now();
-                let mut colors = Vec::with_capacity(IMAGE_WIDTH as usize);
-
-                for i in 0..IMAGE_WIDTH {
-                    let color = calc_color(&camera, &the_world, i, j);
-                    colors.push(color);
-                }
-                row_tx.send(Row { colors, enumerator }).unwrap();
-                eprintln!("{}", format_elapsed(start, j));
+            for (enumerator, j) in (0..IMAGE_HEIGHT).rev().enumerate() {
+                tx.send((enumerator, j)).unwrap();
             }
         }));
-    }
 
-    drop(row_tx);
+        for _ in 0..thread_count {
+            let the_world = Arc::clone(&self.world);
+            let camera = Arc::clone(&self.camera);
+            let rx = Arc::clone(&rx);
+            let row_tx = row_tx.clone();
 
-    let mut heap = BinaryHeap::new();
-    let mut heap_cursor = 0;
+            threads.push(thread::spawn(move || {
+                loop {
+                    let (enumerator, j) = match rx.lock().unwrap().recv() {
+                        Ok((enumerator, j)) => (enumerator, j),
+                        Err(_) => {
+                            // eprintln!("exiting thread: {}", e);
+                            return;
+                        }
+                    };
+                    let start = Instant::now();
+                    let mut colors = Vec::with_capacity(IMAGE_WIDTH as usize);
 
-    for row in row_rx {
-        heap.push(row);
-
-        while let Some(row) = heap.peek() {
-            if row.enumerator != heap_cursor {
-                break;
-            }
-            if let Some(row) = heap.pop() {
-                for color in row.colors {
-                    Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                    for i in 0..IMAGE_WIDTH {
+                        let color = calc_color(&camera, &the_world, i, j);
+                        colors.push(color);
+                    }
+                    row_tx.send(Row { colors, enumerator }).unwrap();
+                    eprintln!("{}", format_elapsed(start, j));
                 }
+            }));
+        }
+
+        drop(row_tx);
+
+        let mut heap = BinaryHeap::new();
+        let mut heap_cursor = 0;
+
+        for row in row_rx {
+            heap.push(row);
+
+            while let Some(row) = heap.peek() {
+                if row.enumerator != heap_cursor {
+                    break;
+                }
+                if let Some(row) = heap.pop() {
+                    for color in row.colors {
+                        Vec3::write_color(color, SAMPLES_PER_PIXEL);
+                    }
+                }
+                heap_cursor += 1;
             }
-            heap_cursor += 1;
+        }
+
+        assert_eq!(heap.len(), 0);
+
+        for handle in threads {
+            handle.join().unwrap();
         }
     }
 
-    assert_eq!(heap.len(), 0);
+    fn single_thread(&self) {
+        // rendering from left upper corner to right lower corner
+        for j in (0..IMAGE_HEIGHT).rev() {
+            eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
+            let start = Instant::now();
 
-    for handle in threads {
-        handle.join().unwrap();
-    }
-}
-
-fn single_thread(camera: &camera::Camera, the_world: &world::World) {
-    // rendering from left upper corner to right lower corner
-    for j in (0..IMAGE_HEIGHT).rev() {
-        eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
-        let start = Instant::now();
-
-        for i in 0..IMAGE_WIDTH {
-            let color = calc_color(camera, the_world, i, j);
-            Vec3::write_color(color, SAMPLES_PER_PIXEL);
+            for i in 0..IMAGE_WIDTH {
+                let color = calc_color(&self.camera, &self.world, i, j);
+                Vec3::write_color(color, SAMPLES_PER_PIXEL);
+            }
+            eprintln!("{}", format_elapsed(start, j));
+            println!();
         }
-        eprintln!("{}", format_elapsed(start, j));
-        println!();
     }
 }
 
