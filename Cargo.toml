@@ -11,3 +11,4 @@ clap = { version = "4.4", features = ["derive"] }
 humantime = "2.2.0"
 rand = "0.8.1"
 num_cpus = "1.13.0"
+itertools = "0.14"

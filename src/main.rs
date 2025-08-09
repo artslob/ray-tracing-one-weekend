@@ -1,15 +1,16 @@
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Instant;
 
+use clap::Parser;
+use itertools::Itertools;
 use rand::{thread_rng, Rng};
 
 use crate::vec3::{Color, Point3, Vec3};
-use clap::Parser;
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
-use std::time::Instant;
 
 mod camera;
 mod cli;
@@ -34,11 +35,7 @@ fn main() {
         y: 2.0,
         z: 3.0,
     };
-    let lookat = Point3 {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-    };
+    let lookat = Point3::origin();
     let vup = Vec3 {
         x: 0.0,
         y: 1.0,
@@ -119,20 +116,14 @@ impl Renderer {
 
             threads.push(thread::spawn(move || {
                 loop {
-                    let (enumerator, j) = match rx.lock().unwrap().recv() {
-                        Ok((enumerator, j)) => (enumerator, j),
-                        Err(_) => {
-                            // eprintln!("exiting thread: {}", e);
-                            return;
-                        }
+                    let Ok((enumerator, j)) = rx.lock().unwrap().recv() else {
+                        // eprintln!("exiting thread: {}", e);
+                        return;
                     };
                     let start = Instant::now();
-                    let mut colors = Vec::with_capacity(IMAGE_WIDTH as usize);
-
-                    for i in 0..IMAGE_WIDTH {
-                        let color = renderer.calc_color(i, j);
-                        colors.push(color);
-                    }
+                    let colors = (0..IMAGE_WIDTH)
+                        .map(|i| renderer.calc_color(i, j))
+                        .collect_vec();
                     row_tx.send(Row { colors, enumerator }).unwrap();
                     eprintln!("{}", format_elapsed(start, j));
                 }
@@ -183,19 +174,16 @@ impl Renderer {
     }
 
     fn calc_color(&self, i: i32, j: i32) -> Color {
-        let mut color = Color::new(0., 0., 0.);
+        (0..self.samples_per_pixel)
+            .map(|_| {
+                let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
+                let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
 
-        for _ in 0..self.samples_per_pixel {
-            let u = (i as f64 + thread_rng().gen::<f64>()) / (IMAGE_WIDTH - 1) as f64;
-            let v = (j as f64 + thread_rng().gen::<f64>()) / (IMAGE_HEIGHT - 1) as f64;
-
-            color += self
-                .camera
-                .get_ray(u, v)
-                .ray_color(&self.world, self.max_depth);
-        }
-
-        color
+                self.camera
+                    .get_ray(u, v)
+                    .ray_color(&self.world, self.max_depth)
+            })
+            .fold(Color::origin(), |a, b| a + b)
     }
 }
 
