@@ -9,6 +9,7 @@ use std::time::Instant;
 use clap::Parser;
 use itertools::Itertools;
 
+use crate::output::PpmOutput;
 use crate::rng::Random;
 use crate::vec3::{Color, Point3, Vec3};
 
@@ -16,6 +17,7 @@ mod camera;
 mod cli;
 mod hittable;
 mod materials;
+mod output;
 mod ray;
 mod rng;
 mod sphere;
@@ -57,18 +59,22 @@ fn main() {
 
     let args = cli::Args::parse();
 
-    // header of ppm image file
-    println!("P3\n{} {}\n{}", IMAGE_WIDTH, IMAGE_HEIGHT, BRIGHTNESS);
-
     let start = Instant::now();
 
     let renderer = Renderer {
         camera: Arc::clone(&camera),
         world: Arc::clone(&world),
+        output: PpmOutput {
+            image_width: IMAGE_WIDTH,
+            image_height: IMAGE_HEIGHT,
+            brightness: BRIGHTNESS,
+        },
         random: random.clone(),
         samples_per_pixel: args.samples_per_pixel,
         max_depth: args.max_depth,
     };
+
+    renderer.output.header();
 
     if args.single_thread {
         eprintln!("use single thread");
@@ -88,6 +94,7 @@ fn main() {
 struct Renderer {
     camera: Arc<camera::Camera>,
     world: Arc<world::World>,
+    output: PpmOutput,
     random: Random,
     samples_per_pixel: u32,
     max_depth: u32,
@@ -148,7 +155,8 @@ impl Renderer {
                 }
                 if let Some(row) = heap.pop() {
                     for color in row.colors {
-                        Vec3::write_color(color, self.samples_per_pixel);
+                        let color = Vec3::create_color(color, self.samples_per_pixel);
+                        self.output.color(color);
                     }
                 }
                 heap_cursor += 1;
@@ -170,7 +178,8 @@ impl Renderer {
 
             for i in 0..IMAGE_WIDTH {
                 let color = self.calc_color(i, j);
-                Vec3::write_color(color, self.samples_per_pixel);
+                let color = Vec3::create_color(color, self.samples_per_pixel);
+                self.output.color(color);
             }
             eprintln!("{}", format_elapsed(start, j));
             println!();

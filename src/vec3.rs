@@ -1,3 +1,4 @@
+use crate::output::OutputColor;
 use crate::rng::Random;
 use crate::utils;
 use std::cmp;
@@ -93,14 +94,14 @@ impl Vec3 {
         *self / self.length()
     }
 
-    pub fn write_color(color: Color, samples_per_pixel: u32) {
+    pub fn create_color(color: Color, samples_per_pixel: u32) -> OutputColor {
         let scale = 1. / samples_per_pixel as f64;
 
-        let red = Self::color_value(color.x, scale);
-        let green = Self::color_value(color.y, scale);
-        let blue = Self::color_value(color.z, scale);
-
-        print!("{} {} {} ", red, green, blue);
+        OutputColor {
+            red: Self::color_value(color.x, scale),
+            green: Self::color_value(color.y, scale),
+            blue: Self::color_value(color.z, scale),
+        }
     }
 
     fn color_value(value: f64, scale: f64) -> i32 {
