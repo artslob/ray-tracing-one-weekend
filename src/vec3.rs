@@ -2,7 +2,7 @@ use crate::utils;
 use std::cmp;
 use std::ops;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -11,14 +11,6 @@ pub struct Vec3 {
 
 pub type Point3 = Vec3;
 pub type Color = Vec3;
-
-impl Copy for Vec3 {}
-
-impl Clone for Vec3 {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
 
 impl Vec3 {
     pub fn origin() -> Self {
