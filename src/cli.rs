@@ -8,4 +8,8 @@ pub struct Args {
     pub samples_per_pixel: u32,
     #[arg(long, default_value_t = 50)]
     pub max_depth: u32,
+    #[arg(long, default_value_t = 1200)]
+    pub image_width: u32,
+    #[arg(long, default_value_t = 800)]
+    pub image_height: u32,
 }

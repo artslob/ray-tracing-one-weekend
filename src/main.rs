@@ -27,9 +27,6 @@ mod utils;
 mod vec3;
 mod world;
 
-const ASPECT_RATIO: f64 = 3.0 / 2.0;
-const IMAGE_WIDTH: u32 = 1200;
-const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const BRIGHTNESS: u32 = 255;
 
 fn main() {
@@ -40,8 +37,8 @@ fn main() {
     let params = params::Params {
         samples_per_pixel: args.samples_per_pixel,
         max_depth: args.max_depth,
-        image_width: IMAGE_WIDTH,
-        image_height: IMAGE_HEIGHT,
+        image_width: args.image_width,
+        image_height: args.image_height,
     };
 
     let start = Instant::now();
@@ -101,7 +98,7 @@ impl<O: Output> Renderer<O> {
             lookat,
             vup,
             20.,
-            ASPECT_RATIO,
+            params.image_width as f64 / params.image_height as f64,
             aperture,
             dist_to_focus,
         ));
@@ -187,11 +184,12 @@ impl<O: Output> Renderer<O> {
 
     fn single_thread(&self) {
         // rendering from left upper corner to right lower corner
-        for j in (0..IMAGE_HEIGHT).rev() {
-            eprintln!("Processing {} rows. Remains {}", IMAGE_HEIGHT, j + 1);
+        let height = self.params.image_height;
+        for j in (0..height).rev() {
+            eprintln!("Processing {height} rows. Remains {}", j + 1);
             let start = Instant::now();
 
-            for i in 0..IMAGE_WIDTH {
+            for i in 0..self.params.image_width {
                 let color = self.calc_color(i, j);
                 let color = Vec3::create_color(color, self.params.samples_per_pixel);
                 self.output.color(color);
@@ -204,8 +202,8 @@ impl<O: Output> Renderer<O> {
     fn calc_color(&self, i: u32, j: u32) -> Color {
         (0..self.params.samples_per_pixel)
             .map(|_| {
-                let u = (i as f64 + self.random.random_f64()) / (IMAGE_WIDTH - 1) as f64;
-                let v = (j as f64 + self.random.random_f64()) / (IMAGE_HEIGHT - 1) as f64;
+                let u = (i as f64 + self.random.random_f64()) / (self.params.image_width - 1) as f64;
+                let v = (j as f64 + self.random.random_f64()) / (self.params.image_height - 1) as f64;
 
                 self.camera
                     .get_ray(&self.random, u, v)
