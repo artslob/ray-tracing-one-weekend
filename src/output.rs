@@ -2,6 +2,12 @@ pub trait Output: Clone + Send + Sync + 'static {
     fn header(&self);
 
     fn color(&self, color: OutputColor);
+
+    fn colors(&self, colors: impl IntoIterator<Item = OutputColor>) {
+        for color in colors {
+            self.color(color);
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

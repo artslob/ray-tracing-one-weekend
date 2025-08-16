@@ -167,9 +167,7 @@ impl<O: Output> Renderer<O> {
                     break;
                 }
                 if let Some(row) = heap.pop() {
-                    for color in row.colors {
-                        self.output.color(color);
-                    }
+                    self.output.colors(row.colors);
                 }
                 heap_cursor += 1;
             }
