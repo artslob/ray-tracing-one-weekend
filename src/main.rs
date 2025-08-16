@@ -9,7 +9,7 @@ use std::time::Instant;
 use clap::Parser;
 use itertools::Itertools;
 
-use crate::output::{Output, PpmOutput};
+use crate::output::{Output, OutputColor, PpmOutput};
 use crate::params::Params;
 use crate::rng::Random;
 use crate::vec3::{Color, Point3, Vec3};
@@ -147,6 +147,7 @@ impl<O: Output> Renderer<O> {
                 let start = Instant::now();
                 let colors = (0..renderer.params.image_width)
                     .map(|i| renderer.calc_color(i, j))
+                    .map(|color| Vec3::create_color(color, renderer.params.samples_per_pixel))
                     .collect_vec();
                 row_tx.send(Row { colors, enumerator }).unwrap();
                 eprintln!("{}", format_elapsed(start, j));
@@ -167,7 +168,6 @@ impl<O: Output> Renderer<O> {
                 }
                 if let Some(row) = heap.pop() {
                     for color in row.colors {
-                        let color = Vec3::create_color(color, self.params.samples_per_pixel);
                         self.output.color(color);
                     }
                 }
@@ -216,7 +216,7 @@ impl<O: Output> Renderer<O> {
 }
 
 struct Row {
-    colors: Vec<Color>,
+    colors: Vec<OutputColor>,
     enumerator: usize,
 }
 
