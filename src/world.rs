@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::hittable::{HitRecord, Hittable};
 use crate::materials;
 use crate::ray::Ray;
@@ -8,8 +10,17 @@ use crate::vec3::{Color, Point3};
 type ThreadHittable = dyn Hittable + Sync + Send;
 
 pub struct World {
-    list: Vec<Box<ThreadHittable>>,
+    list: Vec<Arc<ThreadHittable>>,
     pub random: Random,
+}
+
+impl Clone for World {
+    fn clone(&self) -> Self {
+        Self {
+            list: self.list.clone(),
+            random: self.random.clone(),
+        }
+    }
 }
 
 impl World {
@@ -21,7 +32,7 @@ impl World {
     }
 
     pub fn add(&mut self, value: Box<ThreadHittable>) {
-        self.list.push(value)
+        self.list.push(Arc::from(value))
     }
 
     pub fn with_items(mut self) -> Self {

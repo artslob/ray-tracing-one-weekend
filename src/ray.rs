@@ -2,6 +2,7 @@ use crate::hittable::Hittable;
 use crate::vec3::{Color, Point3, Vec3};
 use crate::world::World;
 
+#[derive(Debug)]
 pub struct Ray {
     pub origin: Point3,
     pub direction: Vec3,

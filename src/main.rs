@@ -75,7 +75,7 @@ fn main() {
 #[derive(Clone)]
 struct Renderer<O: Output> {
     camera: Arc<camera::Camera>,
-    world: Arc<world::World>,
+    world: world::World,
     output: O,
     random: Random,
     params: Params,
@@ -107,7 +107,7 @@ impl<O: Output> Renderer<O> {
         ));
         Self {
             camera,
-            world: Arc::new(world::World::new(random.clone()).with_items()),
+            world: world::World::new(random.clone()).with_items(),
             output,
             random,
             params,
@@ -137,23 +137,22 @@ impl<O: Output> Renderer<O> {
         });
 
         for _ in 0..thread_count {
-            let renderer: Renderer<O> = self.clone();
+            let origin: Renderer<O> = self.clone();
             let rx = Arc::clone(&rx);
             let row_tx = row_tx.clone();
 
-            threads.push(thread::spawn(move || {
-                loop {
-                    let Ok((enumerator, j)) = rx.lock().unwrap().recv() else {
-                        // eprintln!("exiting thread: {}", e);
-                        return;
-                    };
-                    let start = Instant::now();
-                    let colors = (0..renderer.params.image_width)
-                        .map(|i| renderer.calc_color(i, j))
-                        .collect_vec();
-                    row_tx.send(Row { colors, enumerator }).unwrap();
-                    eprintln!("{}", format_elapsed(start, j));
-                }
+            threads.push(thread::spawn(move || loop {
+                let Ok((enumerator, j)) = rx.lock().unwrap().recv() else {
+                    return;
+                };
+                // need to restore initial state of renderer for deterministic result
+                let renderer = origin.clone();
+                let start = Instant::now();
+                let colors = (0..renderer.params.image_width)
+                    .map(|i| renderer.calc_color(i, j))
+                    .collect_vec();
+                row_tx.send(Row { colors, enumerator }).unwrap();
+                eprintln!("{}", format_elapsed(start, j));
             }));
         }
 
@@ -274,8 +273,8 @@ mod tests {
         let params = params::Params {
             samples_per_pixel: 10,
             max_depth: 10,
-            image_width: 120,
-            image_height: 80,
+            image_width: 12,
+            image_height: 8,
         };
         let output = MockOutput {
             colors: Default::default(),
@@ -283,7 +282,19 @@ mod tests {
         let renderer = Renderer::new(output, random, params);
         renderer.multiple_threads();
         let colors = renderer.output.colors.lock().unwrap();
-        assert_eq!(colors.len(), 9600);
+        assert_eq!(colors.len(), 96);
+        let colors = colors
+            .iter()
+            .map(|color| {
+                format!("{} {} {}", color.red, color.green, color.blue)
+                // [
+                //     color.red.to_le_bytes(),
+                //     color.green.to_le_bytes(),
+                //     color.blue.to_le_bytes(),
+                // ]
+            })
+            .join("\n");
+        insta::assert_binary_snapshot!("colors.bin", colors.as_bytes().to_owned());
     }
 
     #[test]

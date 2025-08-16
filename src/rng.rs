@@ -4,9 +4,17 @@ use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha20Rng as ChaCha;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Random {
     rng: Arc<Mutex<ChaCha>>,
+}
+
+impl Clone for Random {
+    fn clone(&self) -> Self {
+        let chacha = self.rng.lock().unwrap().clone();
+        let rng = Arc::new(Mutex::new(chacha));
+        Self { rng }
+    }
 }
 
 impl Random {

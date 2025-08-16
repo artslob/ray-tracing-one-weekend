@@ -30,3 +30,13 @@ pub struct OutputColor {
     pub green: i32,
     pub blue: i32,
 }
+
+impl OutputColor {
+    pub fn as_bytes(&self) -> [[u8; 4]; 3] {
+        [
+            self.red.to_le_bytes(),
+            self.green.to_le_bytes(),
+            self.blue.to_le_bytes(),
+        ]
+    }
+}

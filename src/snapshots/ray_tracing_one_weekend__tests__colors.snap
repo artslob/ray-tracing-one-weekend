@@ -1,0 +1,6 @@
+---
+source: src/main.rs
+expression: colors.as_bytes().to_owned()
+extension: bin
+snapshot_kind: binary
+---
