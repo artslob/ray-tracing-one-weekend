@@ -146,8 +146,11 @@ impl<O: Output> Renderer<O> {
                 let renderer = origin.clone();
                 let start = Instant::now();
                 let colors = (0..renderer.params.image_width)
-                    .map(|i| renderer.calc_color(i, j))
-                    .map(|color| Vec3::create_color(color, renderer.params.samples_per_pixel))
+                    .map(|i| {
+                        renderer
+                            .calc_color(i, j)
+                            .create_color(renderer.params.samples_per_pixel)
+                    })
                     .collect_vec();
                 row_tx.send(Row { colors, enumerator }).unwrap();
                 eprintln!("{}", format_elapsed(start, j));
@@ -188,8 +191,9 @@ impl<O: Output> Renderer<O> {
             let start = Instant::now();
 
             for i in 0..self.params.image_width {
-                let color = self.calc_color(i, j);
-                let color = Vec3::create_color(color, self.params.samples_per_pixel);
+                let color = self
+                    .calc_color(i, j)
+                    .create_color(self.params.samples_per_pixel);
                 self.output.color(color);
             }
             eprintln!("{}", format_elapsed(start, j));

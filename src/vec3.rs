@@ -94,13 +94,13 @@ impl Vec3 {
         *self / self.length()
     }
 
-    pub fn create_color(color: Color, samples_per_pixel: u32) -> OutputColor {
+    pub fn create_color(&self, samples_per_pixel: u32) -> OutputColor {
         let scale = 1. / samples_per_pixel as f64;
 
         OutputColor {
-            red: Self::color_value(color.x, scale),
-            green: Self::color_value(color.y, scale),
-            blue: Self::color_value(color.z, scale),
+            red: Self::color_value(self.x, scale),
+            green: Self::color_value(self.y, scale),
+            blue: Self::color_value(self.z, scale),
         }
     }
 
