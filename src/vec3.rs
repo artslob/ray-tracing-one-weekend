@@ -110,7 +110,7 @@ impl Vec3 {
         // gamma-correct for gamma=2.0
         let value = (value * scale).sqrt();
         // Write the translated [0,255] value of each color component.
-        (ROUNDING * utils::clamp(value, 0., 0.999)) as i32
+        (ROUNDING * value.clamp(0.0, 0.999)) as i32
     }
 
     pub fn near_zero(&self) -> bool {
