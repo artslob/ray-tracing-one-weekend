@@ -266,7 +266,37 @@ mod tests {
     }
 
     #[test]
-    fn image_generation() {
+    fn image_generation_single_thread() {
+        let random = rng::Random::from_seed(12345);
+        let params = params::Params {
+            samples_per_pixel: 10,
+            max_depth: 10,
+            image_width: 12,
+            image_height: 8,
+        };
+        let output = MockOutput {
+            colors: Default::default(),
+        };
+        let renderer = Renderer::new(output, random, params);
+        renderer.single_thread();
+        let colors = renderer.output.colors.lock().unwrap();
+        assert_eq!(colors.len(), 96);
+        let colors = colors
+            .iter()
+            .map(|color| {
+                format!("{} {} {}", color.red, color.green, color.blue)
+                // [
+                //     color.red.to_le_bytes(),
+                //     color.green.to_le_bytes(),
+                //     color.blue.to_le_bytes(),
+                // ]
+            })
+            .join("\n");
+        insta::assert_binary_snapshot!("single-thread.bin", colors.as_bytes().to_owned());
+    }
+
+    #[test]
+    fn image_generation_multiple_threads() {
         let random = rng::Random::from_seed(12345);
         let params = params::Params {
             samples_per_pixel: 10,
@@ -292,7 +322,7 @@ mod tests {
                 // ]
             })
             .join("\n");
-        insta::assert_binary_snapshot!("colors.bin", colors.as_bytes().to_owned());
+        insta::assert_binary_snapshot!("multiple-threads.bin", colors.as_bytes().to_owned());
     }
 
     #[test]
