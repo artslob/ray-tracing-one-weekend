@@ -146,11 +146,7 @@ impl<O: Output> Renderer<O> {
                 let renderer = origin.clone();
                 let start = Instant::now();
                 let colors = (0..renderer.params.image_width)
-                    .map(|i| {
-                        renderer
-                            .calc_color(i, j)
-                            .create_color(renderer.params.samples_per_pixel)
-                    })
+                    .map(|i| renderer.calc_color(i, j))
                     .collect_vec();
                 row_tx.send(Row { colors, enumerator }).unwrap();
                 eprintln!("{}", format_elapsed(start, j));
@@ -191,9 +187,7 @@ impl<O: Output> Renderer<O> {
             let start = Instant::now();
 
             for i in 0..self.params.image_width {
-                let color = self
-                    .calc_color(i, j)
-                    .create_color(self.params.samples_per_pixel);
+                let color = self.calc_color(i, j);
                 self.output.color(color);
             }
             eprintln!("{}", format_elapsed(start, j));
@@ -201,7 +195,7 @@ impl<O: Output> Renderer<O> {
         }
     }
 
-    fn calc_color(&self, i: u32, j: u32) -> Color {
+    fn calc_color(&self, i: u32, j: u32) -> OutputColor {
         (0..self.params.samples_per_pixel)
             .map(|_| {
                 let u =
@@ -214,6 +208,7 @@ impl<O: Output> Renderer<O> {
                     .ray_color(&self.world, self.params.max_depth)
             })
             .fold(Color::origin(), |a, b| a + b)
+            .create_color(self.params.samples_per_pixel)
     }
 }
 
