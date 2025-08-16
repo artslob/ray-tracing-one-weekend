@@ -202,8 +202,10 @@ impl<O: Output> Renderer<O> {
     fn calc_color(&self, i: u32, j: u32) -> Color {
         (0..self.params.samples_per_pixel)
             .map(|_| {
-                let u = (i as f64 + self.random.random_f64()) / (self.params.image_width - 1) as f64;
-                let v = (j as f64 + self.random.random_f64()) / (self.params.image_height - 1) as f64;
+                let u =
+                    (i as f64 + self.random.random_f64()) / (self.params.image_width - 1) as f64;
+                let v =
+                    (j as f64 + self.random.random_f64()) / (self.params.image_height - 1) as f64;
 
                 self.camera
                     .get_ray(&self.random, u, v)
@@ -252,7 +254,7 @@ mod tests {
     use crate::Renderer;
     use output::OutputColor;
 
-    #[derive(Clone)]
+    #[derive(Clone, Default)]
     struct MockOutput {
         colors: Arc<Mutex<Vec<OutputColor>>>,
     }
@@ -274,9 +276,7 @@ mod tests {
             image_width: 12,
             image_height: 8,
         };
-        let output = MockOutput {
-            colors: Default::default(),
-        };
+        let output = MockOutput::default();
         let renderer = Renderer::new(output, random, params);
         renderer.single_thread();
         let colors = renderer.output.colors.lock().unwrap();
@@ -304,9 +304,7 @@ mod tests {
             image_width: 12,
             image_height: 8,
         };
-        let output = MockOutput {
-            colors: Default::default(),
-        };
+        let output = MockOutput::default();
         let renderer = Renderer::new(output, random, params);
         renderer.multiple_threads();
         let colors = renderer.output.colors.lock().unwrap();
