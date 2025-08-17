@@ -24,11 +24,11 @@ impl Ray {
             z: 0.0,
         };
 
-        if depth <= 0 {
+        if depth == 0 {
             return BLACK;
         }
 
-        if let Some(record) = world.hit(self, 0.001, std::f64::INFINITY) {
+        if let Some(record) = world.hit(self, 0.001, f64::INFINITY) {
             if let Some(scatter_data) = record.material.scatter(self, &record, &world.random) {
                 let attenuation = scatter_data.attenuation;
                 let scattered = scatter_data.scattered;
