@@ -12,7 +12,7 @@ pub struct Random {
 impl Clone for Random {
     fn clone(&self) -> Self {
         // drop mutable ref to avoid panic
-        let chacha = self.rng.borrow_mut().clone();
+        let chacha = self.rng.borrow().clone();
         let rng = RefCell::new(chacha);
         Self { rng }
     }
